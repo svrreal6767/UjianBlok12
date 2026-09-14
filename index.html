@@ -309,6 +309,36 @@ nav.side a.aktif::before{content:"";display:inline-block;width:7px;height:7px;ba
 .tag-salah{background:color-mix(in srgb,var(--bad) 26%,var(--surface))}
 .why{font-size:14px;color:var(--ink-2);margin-top:10px;border-left:5px solid var(--sakura);padding-left:12px}
 
+
+/* ---- flashcard tanya-jawab ---- */
+.fc .fc-tanya{font-size:19px;line-height:1.55;font-weight:700;margin:0;max-width:54ch}
+.fc .fc-isi p:last-child{margin-bottom:0}
+.chip-grup{font-family:var(--pixel);font-size:8.5px;color:var(--sakura-deep);line-height:1.7;
+  align-self:center;padding:0 4px 0 10px;letter-spacing:.02em}
+.chips{align-items:center}
+#fcChips{margin-bottom:20px}
+
+/* ---- lightbox gambar ---- */
+figure img,.zoomable{cursor:zoom-in}
+#lb{position:fixed;inset:0;z-index:200;background:rgba(16,10,12,.97);
+  display:flex;flex-direction:column;padding:0;overscroll-behavior:contain}
+#lb[hidden]{display:none}
+#lb .lb-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:10px 14px;background:var(--surface);border-bottom:3px solid var(--line)}
+#lb .lb-bar button{border:3px solid var(--line);background:var(--surface);
+  box-shadow:3px 3px 0 var(--line);padding:7px 12px;font-size:13px;font-weight:600;border-radius:0}
+#lb .lb-bar button:active{transform:translate(3px,3px);box-shadow:none}
+#lb .lb-bar #lbTutup{margin-left:auto;background:var(--sakura);color:#2A1218}
+#lb .lb-zoom{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:46px;text-align:center}
+#lb .lb-area{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:16px}
+#lb .lb-area img{display:block;border:3px solid var(--line);background:#fff;
+  max-width:none;transform-origin:top center;image-rendering:auto;cursor:grab}
+#lb .lb-area img.geser{cursor:grabbing}
+#lb .lb-cap{padding:12px 16px 16px;color:#F4E7DC;font-size:14.5px;line-height:1.55;
+  text-align:center;margin:0;background:rgba(16,10,12,.98);border-top:3px solid var(--line)}
+@media (max-width:620px){#lb .lb-bar{padding:8px 10px;gap:6px}
+  #lb .lb-bar button{padding:6px 9px;font-size:12px}}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media (max-width:860px){
   .shell{grid-template-columns:minmax(0,1fr);gap:0}
@@ -337,7 +367,7 @@ nav.side a.aktif::before{content:"";display:inline-block;width:7px;height:7px;ba
   <button data-v="materi" class="tab">Materi kuliah</button>
   <button data-v="skills" class="tab">Skills lab</button>
   <button data-v="tryout" class="tab">Tryout</button>
-  <button data-v="angka" class="tab">Angka kunci</button>
+  <button data-v="angka" class="tab">Flashcard</button>
   <button data-v="osce" class="tab">OSCE</button>
   <button data-v="hafalan" class="tab">Hafalan langkah</button>
 </nav></div>
@@ -1411,6 +1441,22 @@ nav.side a.aktif::before{content:"";display:inline-block;width:7px;height:7px;ba
 
 
 </main>
+
+<div id="lb" hidden role="dialog" aria-modal="true" aria-label="Tampilan gambar">
+  <div class="lb-bar">
+    <button id="lbKecil" title="Perkecil">−</button>
+    <span class="lb-zoom" id="lbZoom">100%</span>
+    <button id="lbBesar" title="Perbesar">+</button>
+    <button id="lbPas">Paskan layar</button>
+    <button id="lbAsli">Ukuran asli</button>
+    <button id="lbPrev">← Sebelumnya</button>
+    <button id="lbNext">Berikutnya →</button>
+    <button id="lbTutup">Tutup ✕</button>
+  </div>
+  <div class="lb-area" id="lbArea"><img id="lbImg" alt=""></div>
+  <p class="lb-cap" id="lbCap"></p>
+</div>
+
 </div>
 
 <script>
@@ -1739,42 +1785,634 @@ function selesai(){
   };
 })();
 
-/* ---------- flashcard angka kunci ---------- */
+/* ---------- flashcard ---------- */
+var FCBANK={
+luka:[
+["Definisi luka menurut Kozier (1995)?","Kerusakan kontinuitas kulit, membran mukosa, tulang, atau organ lain."],
+["Risiko infeksi clean wound vs clean-contaminated vs contaminated?","Clean 1–5% · Clean-contaminated 3–11% · Contaminated 10–17%."],
+["Stadium luka I sampai IV berdasarkan kedalaman?","I superfisial (epidermis, non-blanching erythema) · II partial thickness (epidermis + dermis atas) · III full thickness sampai fasia, belum kena otot · IV sampai otot, tendon, tulang."],
+["Vulnus laceratum vs vulnus scissum?","Laceratum: robek, tepi tidak beraturan, masih ada jembatan jaringan. Scissum: sayatan benda tajam, tepi reguler, sempit-dalam."],
+["Apa itu vulnus sclopetum dan tandanya?","Luka tembak — luka masuk bertanda contusion ring, luka keluar lebih lebar."],
+["Apa itu vulnus degloving?","Kulit terkelupas tetapi satu sisi masih menempel (pedicle)."],
+["Vulnus excoriasi mengenai lapisan apa?","Gesekan yang merusak epidermis <b>dan</b> dermis."],
+["Vulnus punctum vs vulnus ictum/morsum?","Punctum: tusukan benda tajam, sempit dan dalam. Ictum/morsum: gigitan hewan atau manusia."],
+["Tiga fase penyembuhan luka?","Inflamasi → tissue formation/proliferasi → remodeling."],
+["Peran platelet dan PDGF pada fase inflamasi?","Bekuan darah menghentikan perdarahan dan jadi matriks migrasi sel; platelet melepas PDGF yang menarik makrofag dan fibroblas."],
+["Kapan jaringan granulasi masuk ke ruang luka?","± hari ke-4. Migrasi sel epitel tepi luka sudah mulai dalam 24 jam."],
+["Apa yang terjadi pada fase remodeling?","Minggu kedua fibroblas menyusun berkas mikrofilamen aktin; kolagen tipe III diganti tipe I."],
+["Berapa kekuatan luka pada 3 minggu pertama?","Hanya ± <b>20%</b> dari kekuatan akhir."],
+["Kapan tensile strength mencapai 50% dan berapa maksimalnya?","<b>50% dalam 3 bulan</b>; maksimal ± <b>80%</b> dari kulit normal."],
+["Luka < 6 jam ditangani bagaimana?","Dianggap luka bersih — jahitan primer, sembuh per primam."],
+["Luka 6–12 jam ditangani bagaimana?","Dianggap terkontaminasi: ekspektatif dengan kompres antiseptik + antibiotik. Hari ke-3–7 bila tidak ada radang → <i>delayed primary suture</i>; bila timbul pus → luka terinfeksi."],
+["Luka > 12 jam ditangani bagaimana?","Dianggap terinfeksi: kompres + antibiotik sambil menunggu kultur dan tes resistensi; setelah granulasi sehat → jahitan sekunder."],
+["Luka < 6 jam tapi kontaminasi banyak atau energi besar (luka tembak, terjepit mesin) digolongkan apa?","Tetap sebagai luka terkontaminasi, bukan luka bersih."]
+],
+lukabakar:[
+["Enam kelompok penyebab luka bakar?","Kering (api, benda panas, gesekan) · basah (uap, cairan/minyak panas) · listrik · dingin · zat kimia (asam/basa kuat) · radiasi."],
+["Prinsip pertama penanganan luka bakar?","Awalnya \"abaikan\" luka bakarnya — ikuti primary survey trauma umum ABCDE, selesai dalam 2–5 menit."],
+["Kapan trauma inhalasi dicurigai?","Setiap pasien luka bakar karena api dicurigai trauma inhalasi sampai dibuktikan sebaliknya."],
+["Tujuh tanda trauma inhalasi?","Bau asap pada pakaian · mukosa mulut/alis/rambut hidung hangus · jelaga di mulut dan faring · serak dan wheezing · sputum mengandung karbon · luka bakar kepala-badan akibat ledakan · riwayat terkurung dalam api."],
+["Berapa afinitas Hb terhadap CO dibanding O₂?","<b>200–250×</b> lebih besar. Keracunan CO dicurigai pada luka bakar di ruang tertutup atau pasien tidak sadar."],
+["Ukuran dan jumlah jalur infus pada resusitasi luka bakar?","Dua jalur jarum besar <b>14–16 G</b>, terutama bila luas > 40% TBSA; pada anak bisa akses intraosseous."],
+["Indikator sirkulasi yang lebih baik daripada tekanan darah?","Frekuensi nadi dan produksi urin."],
+["Tulis rumus Baxter/Parkland.","<b>4 ml Ringer Laktat × %TBSA × BB (kg)</b>; setengah dalam 8 jam pertama, setengah dalam 16 jam berikutnya."],
+["Target produksi urin dewasa dan anak?","Dewasa <b>0,5–1 cc/kgBB/jam</b>; anak <b>1–2 cc/kgBB/jam</b>."],
+["Derajat mana yang dihitung dalam %TBSA?","Hanya derajat <b>II dan III</b>."],
+["Berapa % TBSA telapak tangan pasien?","<b>1%</b>. Dewasa pakai rule of nine, anak pakai tabel Lund–Browder."],
+["Ciri klinis luka bakar derajat II dangkal dan lama sembuhnya?","Eksudasi, <b>ada bula</b>, dasar merah, nyeri — sembuh <b>10–14 hari</b>."],
+["Ciri derajat II dalam?","Dasar merah pucat, nyeri berkurang, sembuh ≥ 1 bulan."],
+["Ciri derajat III?","Abu-abu pucat, kering, tidak nyeri, ada eskar — tidak sembuh sendiri."],
+["Bagaimana menangani bula pada derajat II dangkal?","Bula kecil dibiarkan; bula besar diaspirasi (biological dressing)."],
+["Berapa cepat dressing lembab mempercepat penyembuhan?","<b>150%</b> dibanding luka kering."],
+["Kapan eskarotomi diperlukan?","Bila ada eskar melingkar di dada–punggung."],
+["Kriteria luka bakar ringan?","Derajat II < 15% dewasa, < 10% anak; derajat III < 2% segala usia dan tidak mengenai muka, tangan, kaki, perineum."],
+["Dua komplikasi lanjut luka bakar dan cara mencegahnya?","Kontraktur dan parut hipertrofik — dicegah dengan pressure garment dan splinting."],
+["Apa yang tidak boleh diberikan pada luka bakar?","Kecap, pasta, atau minyak. Dinginkan dengan air/handuk lembab saja."]
+],
+suturing:[
+["Asal kata dan definisi suturing?","Dari Latin <i>sutura</i> = menjahit; menyatukan/mengaproksimasi tepi luka dengan benang dan jarum bedah."],
+["Prinsip dasar jahitan?","Jahitan <b>eversi</b>, hindari tension berlebihan, luka dalam dijahit lapis demi lapis untuk mencegah <i>dead space</i>."],
+["Tegangan jahitan yang ideal?","Cukup untuk aproksimasi tapi cukup longgar agar tidak iskemia/nekrosis."],
+["Tiga sumbu klasifikasi benang?","Absorbable vs non-absorbable · mono vs multifilament · sintetik vs biologis."],
+["Kelebihan dan kekurangan monofilament?","Kelebihan: permukaan halus, friksi rendah, tidak menampung bakteri, tanpa kapilaritas. Kekurangan: handling dan knotting sulit."],
+["Kelemahan multifilament?","Menampung bakteri, ada kapilaritas, menimbulkan drag/cutting jaringan."],
+["Beda absorpsi benang sintetik dan biologis?","Sintetik: hidrolisis, dapat diprediksi, kuat. Biologis: enzimatik, reaksi jaringan lebih besar, tidak dapat diprediksi (tapi ekonomis dan enak dipegang)."],
+["Wound support dan absorpsi plain catgut?","Support <b>7–10 hari</b>, absorpsi massa <b>60–90 hari</b>."],
+["Wound support dan absorpsi chromic catgut?","Support <b>17–21 hari</b>, absorpsi <b>90–110 hari</b>."],
+["Wound support Coated Vicryl vs Vicryl Rapide?","Coated Vicryl <b>28–35 hari</b> (absorpsi 56–70 hari); Vicryl Rapide <b>6–14 hari</b> (absorpsi by 42 hari)."],
+["Wound support Monocryl dan PDS II?","Monocryl (poliglecaprone) <b>14–21 hari</b>, absorpsi 90–120 hari. PDS II (polydioxanone) up to <b>56 hari</b>, absorpsi by 182 hari."],
+["Prinsip penting tentang benang absorbable?","Hilangnya tensile strength terjadi <b>jauh lebih dulu</b> daripada absorpsi massanya."],
+["Sebutkan benang non-absorbable.","Silk (biologis); nylon, polyester, polypropylene, polyvinylidene, stainless steel (sintetik)."],
+["Kelebihan dan kekurangan simple interrupted?","Kelebihan: paling sering dipakai, penyesuaian selektif tepi luka, gagalnya satu jahitan tidak merugikan yang lain. Kekurangan: bekas jahitan setelah edema; banyak simpul menurunkan kekuatan benang hingga <b>50%</b>."],
+["Kapan figure-of-eight dipakai?","Untuk tekanan lokal tinggi → hemostasis, dan stabilisasi jaringan robek. Kekurangan: estetika kurang, risiko iskemia bila terlalu ketat."],
+["Risiko utama simple continuous?","Satu jahitan putus → seluruh penutupan terpengaruh (dehiscence)."],
+["Apa keunggulan locking continuous?","Benang dikunci lewat loop sendiri sehingga mencegah pengetatan progresif."],
+["Indikasi mattress vertikal vs horizontal?","Vertikal untuk sayatan dalam. Horizontal untuk menutup jaringan lunak di atas rongga tulang, mis. soket pasca ekstraksi."],
+["Kapan subcuticular tidak boleh dipakai?","Pada luka dengan tension besar."],
+["Tiga jenis simpul?","Square knot, surgical knot, granny knot."],
+["Beda jarum eyed dan swaged?","Eyed: dua untai benang, perlu waktu threading, risiko korosi dan unthreading. Swaged: channel/drilled, jarum-benang menyatu."],
+["Berapa panjang sisa benang pada simple interrupted?","Dipotong ± <b>0,8 cm</b> di atas simpul."]
+],
+fraktur:[
+["Komponen dasar tulang?","Matriks kolagen tipe I (osteoid) yang termineralisasi kalsium hidroksiapatit."],
+["Empat jenis sel tulang dan fungsinya?","Osteoblas (sintesis & mineralisasi osteoid) · osteosit (sel utama jaringan tulang) · osteoklas (fagosit pengikis tulang) · sel osteoprogenitor (mesenkim primitif penghasil osteoblas)."],
+["Empat lapisan tulang?","Periosteum, endosteum, Haversian, trabecular."],
+["Contoh fraktur tidak komplit?","Hairline, buckle, greenstick."],
+["Bentuk garis patah dan mekanismenya?","Fisura · melintang (angulasi/langsung) · oblik (angulasi) · spiral (rotasi) · kompresi (aksial-fleksi pada spongiosa) · avulsi (traksi otot) · impaksi · impresi (mis. tengkorak)."],
+["Beda kominutif, segmental, dan multipel?","Kominutif: >1 garis dan saling berhubungan. Segmental: >1 garis tidak berhubungan (dua garis = bifokal). Multipel: pada tulang berlainan."],
+["Apa itu fraktur potensial terbuka?","Luka menembus kulit dan subkutis tetapi fasia masih utuh."],
+["Tiga jenis dislokasi fragmen?","Ad longitudinam cum contractionum, ad axim, ad latus. Non-displaced = periosteum utuh."],
+["Fase hematoma/inflamasi: waktu dan kuncinya?","<b>48–72 jam (≤ 1 minggu)</b> — hematoma kaya sel hematopoietik, rekrutmen MSC, sitokin TNF-α, BMP, PDGF, TGF-β, VEGF, IL-1, IL-6."],
+["Fase granulasi/soft callus: waktu dan kuncinya?","<b>2–3 minggu</b> — angiogenesis oleh VEGF; MSC → kondrosit → fibrokartilago; periosteum membentuk woven bone."],
+["Fase hard callus/osifikasi: waktu dan kuncinya?","<b>4–8 minggu</b> — osifikasi endokondral, ALP meningkat → mineralisasi matriks."],
+["Fase remodeling: waktu dan kuncinya?","<b>± 6 bulan – 2 tahun</b> — woven bone → lamellar bone mengikuti <b>Hukum Wolff</b>."],
+["Faktor yang memengaruhi penyembuhan tulang?","Mekanik (imobilisasi) dan biologis (aliran darah ke daerah fraktur, pencegahan infeksi)."],
+["Agen pertumbuhan penting pada penyembuhan tulang?","Superfamili TGF-β termasuk IGF, PDGF, dan setidaknya <b>7 BMP</b>; BMP-2 rekombinan bersifat osteoinduktif."],
+["Asal kalus interna dan kalus eksterna?","Interna dari <b>endosteum</b>; eksterna dari lapisan dalam <b>periosteum</b>."],
+["Mengapa di dekat garis fraktur terbentuk kartilago?","Suplai darah terhambat dan banyak gerakan → sel jadi kondroblas → kartilago. Di situs jauh (vaskularisasi baik) → osteoblas → anyaman tulang primer."],
+["Kalus apa yang dominan pada tulang spongiosa?","Kalus internal/endosteal."],
+["Beda mal union, delayed union, dan non union?","Mal union: sembuh dengan deformitas (angulasi, perpendekan, rotasi). Delayed union: sembuh lebih lama dari normal. Non union: tidak menyambung dalam <b>20 minggu</b>."],
+["Apa itu gap nonunion?","Non union dengan fragmen yang berjauhan."]
+],
+dentoalveolar:[
+["Definisi fraktur dentoalveolar?","Terputusnya kontinuitas jaringan keras gigi dan tulang alveolar. Penyebab: jatuh, KLL, sport injury, perkelahian."],
+["Pertanyaan anamnesis yang paling kritis pada avulsi?","<b>Kapan</b> kecelakaan terjadi — menentukan prognosis replantasi."],
+["Mengapa perlu ditanya di mana kecelakaan terjadi?","Menentukan kemungkinan kontaminasi bakteri dan kimia."],
+["Gejala apa yang menandakan cedera kepala?","Pingsan, muntah, amnesia, pusing, atau gangguan penglihatan."],
+["Apa saja yang dilihat pada pemeriksaan radiologis?","Fraktur akar, derajat intrusi/ekstrusi, kelainan periapikal, pertumbuhan akar, ukuran ruang pulpa dan saluran akar, fraktur rahang, fragmen gigi atau benda asing di jaringan lunak."],
+["Enam klasifikasi fraktur gigi menurut Andreasen?","Crown infraction (retak) · uncomplicated crown fracture · complicated crown fracture · uncomplicated crown–root fracture · complicated crown–root fracture · root fracture."],
+["Jenis kerusakan jaringan periodontal menurut Andreasen?","Concussion, subluxation, luxation (ekstrusif, intrusif, lateral), dan avulsi."],
+["Perawatan crown crack (retak multipel)?","Ditutup <b>unfilled resin</b> agar mahkota tidak berubah warna."],
+["Perawatan fraktur email + sedikit dentin?","Restorasi resin komposit; dentin ditutup <b>Ca(OH)₂</b> untuk melindungi pulpa."],
+["Syarat pulp capping pada pulpa terbuka?","Paparan kecil · waktu fraktur belum lama · tidak ada fraktur akar · gigi tidak displacement · tidak ada tumpatan besar."],
+["Perawatan pulpa terbuka lebar?","Pulpotomi."],
+["Tanda khas intrusi pada perkusi?","<b>Metallic sound</b> seperti ankilosis; sering pada anterior RA."],
+["Tata laksana intrusi?","Reposisi ortodontik perlahan <b>3–4 minggu</b> lalu splinting <b>2–3 bulan</b> + endodontik. Reposisi bedah dihindari karena merusak periodontal dan pulpa."],
+["Tata laksana ekstrusi?","Kembalikan ke soket, splinting <b>1–3 minggu</b> + perawatan endodontik."],
+["Lama stabilisasi pada avulsi dan alasannya?","<b>7–10 hari</b>, sesingkat mungkin — makin rigid dan lama, makin besar resorpsi akar (Andersen, 1975)."],
+["Lima syarat sebelum replantasi (Andersen, 1975)?","1) Tidak ada penyakit periodontal · 2) Soket fit dengan gigi · 3) Tidak ada kontraindikasi ortodontik seperti gigi berdesakan · 4) Waktu replantasi · 5) Keadaan apeks gigi."],
+["Batas waktu replantasi untuk hasil baik vs buruk?","<b>30 menit = good result</b>; <b>> 2 jam = poor result</b>."],
+["Apa yang terjadi dua minggu pasca replantasi?","Sebagian besar serat periodontal intraalveolar sudah sembuh dan revaskularisasi pulpa terjadi."],
+["Tiga komplikasi replantasi?","Resorpsi akar inflamatoris, nekrosis pulpa, ankilosis."],
+["Alat stabilisasi fraktur dentoalveolar?","Erich arch bar, eyelet wiring, splinting, bracket ortodontik, wire-komposit."],
+["Urutan prinsip perawatan fraktur dentoalveolar?","Control of pain (anestesi lokal) → control of infection (debridement) → reposisi → fiksasi-imobilisasi → rehabilitasi fungsi dan estetik."]
+],
+kgd:[
+["Dua kelompok penyebab fraktur maksilofasial?","Trauma (KLL, kecelakaan kerja/olahraga, kekerasan) dan patologis (kista, tumor rahang, atrofi tulang/osteoporosis)."],
+["Apa yang digali pada \"What\" dalam anamnesis 5W1H?","Biodata, jenis dan arah kontak benda, perawatan yang sudah diberikan, keadaan luka (pecahan yang hilang), komorbid."],
+["Mengapa \"When\" penting?","Waktu kejadian menentukan kemungkinan reposisi."],
+["Mengapa \"Where\" penting?","Lokasi menentukan kemungkinan kontaminasi kimia dan bakteri."],
+["Bagaimana uji false movement mandibula?","Ibu jari intraoral, jari lain memegang korpus ekstraoral, lalu gerakkan berlawanan arah."],
+["Apa yang diperiksa pada pemeriksaan ekstraoral?","Asimetri wajah, bengkak bibir, hematoma, abrasi, laserasi hingga dagu; palpasi rima orbita dan arkus."],
+["Bahan pembersih benda asing intraoral?","<b>H₂O₂ 3%</b>, saline, dan air hangat — untuk bekuan darah, fragmen gigi, tanah/pasir."],
+["Tiga pemeriksaan penunjang fraktur maksilofasial?","Panoramik, skull AP, dan Waters."],
+["Empat langkah penatalaksanaan cedera jaringan lunak?","1) Kontrol perdarahan · 2) Debridement · 3) Penjahitan · 4) Pencegahan infeksi."],
+["Cara mengontrol perdarahan?","Identifikasi sumber (suction, irigasi), tekan kasa lembab, cari benda asing; bila perlu agen hemostatik lokal atau asam traneksamat per oral."],
+["Langkah debridement?","Anestesi lokal, irigasi saline, gosok pelan dengan kasa lembab, buang jaringan nekrotik."],
+["Berapa lapis laserasi gingiva dan mukosa alveolar dijahit?","Cukup <b>satu lapis</b> (berbeda dari luka dalam yang dijahit lapis demi lapis)."],
+["Apa isi langkah pencegahan infeksi?","Antibiotik dan profilaksis tetanus."]
+],
+mandibula:[
+["Berapa persen fraktur tulang wajah karena KLL?","<b>60%</b> (Rowe & Killey, 1968)."],
+["Data Schuchardt dkk (1966) tentang fraktur mandibula?","Dari 2901 kasus trauma fasial, <b>2103</b> adalah fraktur mandibula (> 70%)."],
+["Perbandingan fraktur mandibula dan wajah bagian tengah?","Fraktur mandibula <b>2×</b> lebih sering (Fonseca, 1991)."],
+["Persentase fraktur koronoid dan kondilus menurut Olson RA dkk?","Koronoid <b>1,3%</b>; kondilus <b>29,1%</b>."],
+["Sembilan regio anatomi mandibula (Dingman & Natvig, 1964)?","Prosesus alveolaris · midline · simfisis · parasimfisis · body · angle · ramus · prosesus kondilaris · prosesus koronoid."],
+["Aksi m. masseter?","Mengangkat mandibula, merapatkan gigi, memajukan mandibula."],
+["Aksi m. temporalis?","Mengangkat dan menarik mandibula ke belakang (retrusi); menutup mulut."],
+["Aksi m. pterygoideus medialis dan lateralis?","Medialis: mengangkat dan mendorong mandibula ke depan. Lateralis: gerakan sliding ke depan, aktif saat protrusi dan membuka mulut."],
+["Aksi digastrikus dan otot supra/infrahyoid?","Mengangkat os hyoid — penting untuk menelan."],
+["Klasifikasi fraktur angle dan body dari sudut tarikan otot?","Vertically favourable/unfavourable dan horizontally favourable/unfavourable."],
+["Mekanisme fraktur prosesus koronoid?","Kontraksi refleks m. temporalis yang kuat menarik fragmen ke atas ke fosa infratemporalis; bisa terjadi saat operasi kista besar ramus atau odontektomi M3 bawah impaksi."],
+["Tanda klinis fraktur koronoid?","Ekimosis intraoral, lunak saat palpasi di atas koronoid, sakit dan pembatasan gerak — sulit didiagnosis klinis."],
+["Bagian kondilus yang paling sering fraktur?","Ekstrakapsular <b>leher sendi</b>."],
+["Mengapa fragmen kondilus bergeser ke tengah dan depan?","Tarikan m. pterygoideus lateralis yang melekat di sisi anteromedial kepala kondilus."],
+["Apa arti perdarahan dari telinga pada fraktur kondilus?","Laserasi dinding anterior meatus akustikus eksterna. Waspadai juga otorrhea serebrospinal akibat fraktur os temporal petrosa."],
+["Apa itu Battle sign dan apa artinya?","Ekimosis di bawah prosesus mastoid — menandakan fraktur dasar tengkorak."],
+["Tanda intraoral fraktur kondilus unilateral?","Pemendekan ramus sisi fraktur → sumbatan oklusi pada molar; mandibula shifting <b>ke sisi fraktur</b> saat buka mulut; sakit saat protrusi dengan penyimpangan lateral ke sisi berlawanan."],
+["Tanda fraktur kondilus bilateral displaced?","<b>Open bite anterior</b> / posterior gagging. Bila undisplaced/intrakapsular bilateral: tidak maloklusi."],
+["Lama imobilisasi fraktur kondilus intrakapsular unilateral?","Konservatif tanpa imobilisasi; bila dipasang arch bar + rubber, jangan lebih dari <b>2 minggu</b>."],
+["Lama fiksasi ekstrakapsular unilateral yang bergeser/maloklusi?","Fiksasi intermaksilaris <b>3–4 minggu</b>."],
+["Risiko imobilisasi intrakapsular bilateral > 2–3 minggu?","Kaku sendi atau ankilosis."],
+["Lama imobilisasi ekstrakapsular bilateral?","Intermaksilaris <b>4–6 minggu</b>."],
+["Apa gold standard fiksasi fraktur mandibula saat ini?","<b>Miniplate osteosynthesis</b> — menetralisir berbagai tarikan otot dan materialnya tidak terlalu rigid sehingga penyembuhan ideal."],
+["Tiga jenis plat?","Miniadaptation plate, minicompression plate, absorbable plate."],
+["Urutan awal prosedur operasi fraktur mandibula?","Pemasangan arch bar lalu reposisi — manual atau gradual dengan IMF ligatur karet."],
+["Fiksasi untuk rahang bawah edentulous?","Kawat sirkumferensial."]
+],
+midface:[
+["Pembagian tulang muka?","Frontalis (upper third) · sepertiga tengah (middle third) · mandibula (lower third)."],
+["Enam klasifikasi fraktur 1/3 tengah (Moore, 2001)?","Alveolar · Guerin/Le Fort I · Pyramidal/Le Fort II · High transversal/Le Fort III · naso-ethmoidal complex · malar/zygomatic."],
+["Jalur garis fraktur Le Fort I?","Dari tepi lateral lubang hidung anterior, lateral di atas fosa kaninus, di bawah penyangga zigomatik, sepanjang dinding anterior-lateral dan dorsum, melintasi fisura pterigomaksilaris sampai sepertiga bawah lamina pterigoid."],
+["Apa akibat Le Fort I secara fungsional?","Melepaskan bagian penyangga gigi rahang atas dari dasar kranium."],
+["Zigoma berartikulasi dengan tulang apa saja?","Frontal, temporal, sfenoid, dan maksila — zigoma adalah penopang lateral sepertiga tengah wajah."],
+["Perlekatan mana yang rusak saat benturan zigoma?","Yang lebih lemah: maksila, arkus zigomatikus, prosesus frontal, sutura zygomaticomaxillary. Energi tinggi → fraktur bilateral."],
+["Tanda dan gejala fraktur zigoma?","Nyeri, perdarahan dan edema, hipoestesia/anestesia, exoftalmus atau enoftalmus, diplopia, displacement ligamen kantus lateralis, gangguan pergerakan bola mata, deformitas, epistaksis."],
+["Pemeriksaan radiologis fraktur zigoma?","Foto Water's, submentovertex, Caldwell PA, dan CT scan."],
+["Berapa persen fraktur nasal dari fraktur maksilofasial?","<b>40%</b>; urutan ke-3 dari seluruh fraktur tubuh setelah klavikula dan pergelangan tangan."],
+["Ciri fraktur nasal plane I, II, III?","I: fraktur ujung nasal, dorsum bengkok, depresi ujung hidung. II: fraktur tulang nasal atas, depresi dorsum, septum bengkok ke dalam → kesan hidung datar. III: fraktur tulang nasal + prosesus frontalis + spina nasalis; kominutif, terlateralisasi, depresi nyata, medial canthal relaxation dengan telekantus."],
+["Instrumen reposisi fraktur nasal?","Asch forcep, Walsham forcep, Boies elevator. Bila masih deviasi setelah reposisi tertutup → open reduction."],
+["Apa itu racoon eyes?","Edema dan ekimosis periorbital — salah satu tanda klinis fraktur maksila."],
+["Tanda klinis fraktur maksila lainnya?","Perdarahan dan obstruksi napas, nyeri, maloklusi, <i>nasal flattening</i>, telekantus traumatik, deformitas <i>dish face</i>, <i>floating maxilla</i>."],
+["Tolok ukur zona nasal dan zona dasar tengkorak?","Nasal: jalan napas atas dan penciuman. Dasar tengkorak: jalan napas atas, liquor cerebri, penciuman."],
+["Tolok ukur zona orbital dan zona oklusal?","Orbital: jalan napas atas, penglihatan, penciuman, liquor cerebri. Oklusal: oklusi gigi, trismus, jalan napas atas."],
+["Dua pilihan perawatan definitif?","Close reduction dengan manipulasi (arch bar + IMF) atau open reduction dengan pendekatan bedah — keduanya reposisi lalu fiksasi & imobilisasi."],
+["Jenis fiksasi ekstraoral?","Cranio-maxillary, cranio-mandibular, dan kerangka halo."],
+["Empat teknik suspensi kawat (Lesney, 1953)?","Circumferential zygomatic · zygomatic-mandibular · inferior orbital border-mandibular · fronto-mandibular."],
+["Struktur apa saja yang terlibat pada trauma sepertiga atas?","Frontal (dinding anterior/posterior sinus, rima supraorbital, frontoparietal), kerangka nasal, dan dasar tengkorak."],
+["Kapan indikasi operasi bersifat mutlak?","Bila terdapat komunikasi langsung antara otak dan dunia luar."]
+],
+kapitis:[
+["Insidens global cedera otak traumatis?","54–60 juta orang per tahun; GBD 2016 mencatat 27,08 juta kasus baru, insidens terstandar usia <b>369 per 100.000/tahun</b>."],
+["Angka trauma kapitis di Indonesia?","± <b>500.000 kasus/tahun</b>; 10% meninggal sebelum sampai rumah sakit."],
+["Proporsi keparahan pasien yang tiba di RS?","<b>80% ringan, 10% sedang, 10% berat</b>."],
+["Tiga puncak usia trauma kapitis?","Kanak-kanak awal (jatuh) · remaja akhir/dewasa muda (KLL) · lansia (jatuh)."],
+["Urutan lapisan dari luar ke otak?","Kulit kepala → tulang tengkorak → meningen (duramater, arachnoid, piamater) → otak."],
+["Bagian trunkus serebri?","Diensefalon, mesensefalon, pons varoli, medula oblongata."],
+["Cairan serebrospinal disekresi oleh apa dan fungsinya?","Pleksus khoroid; berfungsi sebagai buffer dan penghantar nutrisi."],
+["Tiga isi ruang intrakranial?","Jaringan otak, darah, dan CSS — ketiganya menentukan tekanan intrakranial."],
+["Beda trauma primer dan sekunder?","Primer: terjadi saat kejadian, fenomena mekanik, umumnya lesi permanen. Sekunder: fenomena metabolik lanjutan."],
+["Penyebab sekunder sistemik?","Hipotensi, hipoksemia, hipo/hiperkapnea, hipertermia, hiponatremia."],
+["Penyebab sekunder intrakranial?","TIK meningkat, hematoma, edema, brain shift, vasospasme, kejang, infeksi."],
+["Klasifikasi GCS trauma kapitis?","Ringan <b>13–15</b> (CT tanpa kelainan, rawat < 48 jam) · Sedang <b>9–12</b> (ada kelainan CT, rawat ≥ 48 jam) · Berat <b>≤ 8</b> (tidak ada peningkatan kesadaran > 48 jam pasca trauma/bedah)."],
+["Pembagian alternatif berdasar SKG di slide?","14–15 ringan (hilang kesadaran < 30 menit) · 9–13 sedang · 3–8 berat/koma."],
+["Beda gurgling dan snoring?","Gurgling = sumbatan parsial oleh cairan. Snoring = sumbatan parsial oleh pangkal lidah. Sumbatan total = choking."],
+["Penanganan choking pada pasien sadar vs tidak sadar vs bayi?","Sadar: Heimlich, back blow, chest thrust. Tidak sadar: chest thrust, finger swab. Bayi: chest thrust dan back blow."],
+["Penanganan sumbatan cairan?","Suction, miringkan kepala; bila gagal → airway definitif."],
+["Isi pemeriksaan Breathing?","Look (gerakan dada), listen (suara napas), feel (hembusan); palpasi krepitasi, perkusi sonor/hipersonor, auskultasi vesikuler/ronchi dan simetrisitas."],
+["Lima gangguan ventilasi yang dicari?","Hipoksia, tension pneumothoraks, open pneumothoraks, flail chest, massive hemothoraks."],
+["Isi pemeriksaan Circulation?","Tingkat kesadaran, warna kulit, nadi a. carotis dihitung <b>10 detik</b>, CRT, tanda vital. Stop perdarahan dengan penekanan manual, cairan kristaloid RL, transfusi bila syok, cegah hipotermia."],
+["Apa kepanjangan AVPU?","<b>A</b>lert · response to <b>V</b>oice · response to <b>P</b>ain · <b>U</b>nresponsive — dipakai pada Disability."],
+["Apa yang dikerjakan pada Exposure?","Buka pakaian, cari sumber perdarahan lain, tutup selimut hangat, beri cairan infus yang dihangatkan."],
+["Adjuncts pada primary survey?","EKG, kateter urin, NGT, monitoring pernapasan, temperatur dan pulse oksimetri, foto rontgen."],
+["Enam B pada secondary survey?","B1 breathing · B2 bleed · B3 brain · B4 bladder · B5 bowel · B6 bone — baru dilakukan setelah ABC stabil."],
+["Indikasi rawat inap trauma kapitis?","CT abnormal · semua luka tembus · riwayat kehilangan kesadaran · penurunan kesadaran · nyeri kepala sedang-berat · keracunan alkohol/obat · kebocoran rhinorrhea-otorrhea · co-injury signifikan."],
+["Empat indikasi bedah?","Hematoma intrakranial <b>> 30 ml</b> · pergeseran garis tengah <b>> 5 mm</b> · fraktur tengkorak terbuka · fraktur depresi dengan kedalaman <b>> 1 cm</b>."],
+["Terapi medikamentosa trauma kapitis?","Cairan infus, hiperventilasi, manitol, steroid, furosemid, barbiturat, antikonvulsan."]
+],
+panfacial:[
+["Berapa persen pasien trauma maksilofasial dengan luka ganda?","Lebih dari <b>50%</b> memiliki luka ganda atau multiple fracture site."],
+["Tujuan penanganan panfacial fracture?","Merestorasi fungsi dan estetik, memperbaiki oklusi dan jalan napas. Kesalahan awal → deformitas permanen."],
+["Struktur upper face pada panfacial fracture?","Frontal, supraorbital, temporal, rima supraorbital, orbital floor, sinus frontalis."],
+["Struktur midface dan lower face?","Midface: lateral zygoma, nasoethmoidal/NOE. Lower face: oklusal (gigi, palatum, prosesus alveolaris) serta mandibula area horizontal (body-parasimfisis-simfisis) dan vertikal (condyle-ramus-angulus)."],
+["Apa yang dicari pada pemeriksaan airway panfacial?","Snoring, gargling, dan rhinorea — curiga kebocoran CSF."],
+["Apa yang dinilai pada ruang lingkup oklusi?","Floating maxilla, mandibula tidak stabil, avulsi dan kegoyangan gigi."],
+["Kontribusi Al-Zahrawi (Albucasis), 936–1013?","Reduksi operatif fraktur mandibula pertama; fiksasi kawat emas & perak; lebih dari 200 instrumen bedah."],
+["Kontribusi Ibn Sina (Avicenna), 980–1037?","Klasifikasi fraktur sistemik; reduksi + imobilisasi + perawatan jaringan lunak."],
+["Kontribusi Hippocrates dan Ambroise Paré?","Hippocrates (460–370 SM): reduksi manual dan bandaging. Paré (1510–1590): bedah trauma wajah militer."],
+["Apa yang dikontribusikan Gillies dan Kazanjian–Converse?","Rekonstruksi bertahap, standardisasi IMF dan wiring (1914–1945)."],
+["Siapa yang memperkenalkan mini-plate osteosynthesis dan kapan?","<b>Michelet dkk, 1973</b>. Champy dkk (1978) menambahkan fiksasi berbasis biomekanika."],
+["Apa itu buttress?","Bagian tulang yang lebih tebal, berfungsi sebagai penopang rangka wajah dan menjaga stabilitas (konsep load-bearing vs load-sharing)."],
+["Empat vertical buttress?","1) Nasomaksilaris (sentral/medial) · 2) Zigomatikomaksilaris (lateral) · 3) Pterigomaksilaris (posterolateral maksila) · 4) Ramus mandibula anterior & posterior."],
+["Lima horizontal buttress?","1) Frontal bar (glabella) · 2) Rima orbita inferior · 3) Prosesus alveolaris maksila · 4) Palatum durum · 5) Buttress mandibula transversal superior & inferior."],
+["Fungsi buttress vertikal vs horizontal?","Vertikal mempertahankan <b>tinggi wajah</b>; horizontal mempertahankan <b>lebar wajah dan proyeksi anterior</b>."],
+["Konsekuensi bila buttress gagal direkonstruksi?","Loss of facial height, loss of facial width, loss of projection, dan maloklusi."],
+["Apa kepanjangan AMPLE?","<b>A</b>llergies · <b>M</b>edications · <b>P</b>ast illness · <b>L</b>ast meal · <b>E</b>vent."],
+["Dua pasang strategi urutan rekonstruksi?","Bottom-up vs top-down, dan inside-out vs outside-in."],
+["Apa titik referensi utama rekonstruksi panfacial?","<b>Oklusi</b> — dengan IMF sebagai titik referensi."],
+["Macam IMF/MMF?","Erich arch bar, screw + wire 0.4, plat, dan Gunning splint."],
+["Ukuran mini-plate titanium yang tersedia?","<b>1.0 / 1.3 / 1.5 / 2.0 / 2.3 mm</b> — plat kecil terutama untuk area midface dan kranial."],
+["Dua jenis screw dan peringatannya?","Self-tapping vs self-drilling; hati-hati pemasangan pada tulang tipis."],
+["Apa itu stress shielding dan failure mode plat?","Stress shielding: risiko fiksasi terlalu rigid. Failure mode: fraktur plat dan screw loosening."],
+["Komplikasi umum panfacial fracture?","Maloklusi residual, asimetri wajah, infeksi, dan plate exposure."],
+["Empat kesalahan tersering?","Salah urutan reduksi, over-fixation, under-fixation, dan mengabaikan jaringan lunak."]
+],
+tmj:[
+["TMJ terbentuk dari struktur apa?","<b>Fossa mandibularis ossis temporalis</b> dan <b>processus condylaris mandibula</b>, dengan diskus artikularis di antaranya."],
+["Diskus artikularis melekat di mana?","Kutub lateral dan medial kondilus; di anterior bersambung dengan fascia m. pterygoideus lateralis dan kapsula sendi."],
+["Tebal dan komposisi fibrokartilago permukaan artikular?","± <b>5 mm</b>, terdiri dari kondrosit, fibril kolagen, proteoglikan, dan air."],
+["Empat zona permukaan artikular?","Artikular, proliferatif, fibrokartilago, dan calcified cartilage."],
+["Inervasi dan vaskularisasi TMJ?","Sensoris dari N. aurikulotemporalis dan cabang N. masseter dari N. mandibularis; darah dari a. temporalis superfisialis cabang a. carotis eksterna."],
+["Fungsi ligamentum temporomandibular dan stylomandibularis?","Temporomandibular membatasi gerak satuan diskus-kondilus; stylomandibularis menghubungkan prosesus styloideus dengan angulus."],
+["Beda gerakan rotasi dan gliding/translasi TMJ?","Rotasi: m. pterygoideus lateralis menarik diskus ke anterior, rotasi terjadi antara diskus dan kondilus. Gliding: gerakan kedua, kondilus dan diskus meluncur sepanjang kemiringan eminensia artikularis."],
+["Tiga jenis reseptor TMJ?","Eksteroreseptor (nyeri, sentuh, tekanan, suhu) · interoreseptor (ligamen, tendon, otot, viscera) · proprioseptor (ligamen periodontal, sendi TMJ, otot, tendon)."],
+["Definisi dislokasi TMJ?","Terlepasnya kepala kondilus dari fossa glenoid di bagian squamo-temporal dasar kranial, terkunci pada posisi abnormal sehingga mulut tidak dapat menutup."],
+["Etiologi dislokasi TMJ?","Fungsi berlebih, parafungsional (clenching saat tidur), oklusi tidak stabil, trauma mikro dan makro, disfungsi remodeling artikular."],
+["Contoh penyebab atraumatik dan iatrogenik?","Atraumatik: menguap, tertawa, kejang. Iatrogenik: perawatan gigi, intubasi."],
+["Klasifikasi dislokasi TMJ?","Parsial (subluksasi) / komplet (luksasi) · unilateral / bilateral · akut / kronis menahun / kronis rekuren · berdasar letak kondilus: anterior, posterior, lateral, superior."],
+["Patofisiologi dislokasi anterior?","Tarikan m. temporalis dan masseter sebelum relaksasi m. pterygoideus lateralis — penyebab atraumatik. Dislokasi posterior, lateral, superior disebabkan trauma."],
+["Rantai patogenesis dari kebiasaan mengunyah satu sisi?","Hipermobilitas mandibula → penurunan cairan sinovial → subluksasi → translasi ke depan eminensia artikularis → terkunci dan kejang otot → hilangnya tulang rawan bertahap → dislokasi yang membatasi gerak mandibula."],
+["Apa yang terjadi pada disc displacement?","Permukaan posterior diskus menipis, lamina retrodiskal inferior dan ligamen kolateral memanjang, diskus bergeser."],
+["Ciri disc dislocation with reduction?","Diskus bergerak ke anterior; saat membuka mulut terdengar <b>klik</b> dan diskus kembali normal. Nyeri karena kondilus menempati jaringan retrodiskal yang kaya vaskular dan saraf."],
+["Ciri disc dislocation without reduction?","Elastisitas lamina retrodiskal superior hilang; pembukaan mulut terbatas dan <b>bunyi klik hilang</b>."],
+["Apa itu structural incompatibility?","Adhesion (sementara atau permanen) dan alteration bentuk permukaan sendi."],
+["Terapi non-invasif gangguan TMJ?","Occlusal splint, NSAID (ibuprofen), muscle relaxant, terapi fisik kompres hangat/dingin, terapi latihan, ultrasound, stimulasi elektrogalvanik, pijat."],
+["Terapi minimally invasive dan invasif?","Minimally invasive: arthrosentesis, arthroscopy. Invasif: arthroplasty (reshaping permukaan artikular); Savage: graft atau implan alloplastik. Injeksi asam hialuronat sebagai pelumas sendi."],
+["Posisi operator dan pasien pada reduksi bimanual?","Operator berdiri di depan pasien yang duduk; mandibula sejajar atau lebih rendah dari tangan operator; asisten menstabilkan kepala pasien."],
+["Letak tangan operator saat reduksi bimanual?","Kedua ibu jari pada molar rahang bawah atau linea oblique eksternal, seposterior mungkin; jari lain di angulus mandibula menahan korpus."],
+["Arah gerakan reduksi bimanual?","Mandibula ditekan <b>ke bawah</b> kemudian <b>ke belakang</b>."],
+["Instruksi pasca reduksi dislokasi?","Hindari membuka mulut > 2 cm selama <b>4–6 minggu</b> · sokong rahang bawah saat menguap · diet lunak <b>2 minggu</b> · NSAID · Barton's bandage dengan elastic bandage <b>2–3 hari</b>."]
+],
+endobedah:[
+["Apa saja bedah drainase?","Insisi dan trepanasi/bedah fistula."],
+["Apa saja bedah radikular?","Bedah apikal, kuretase & biopsi periradikular, apikoektomi, retrofilling, amputasi akar, hemiseksi, bikuspidisasi."],
+["Apa saja bedah korektif?","Perbaikan perforasi (mekanikal/resorptif), perbaikan periodontal, guided tissue regeneration, dan reseksi."],
+["Apa saja replacement surgery?","Replantasi (intentional/posttraumatic), implan endodontik, osseointegrated-endosseous."],
+["Indikasi insisi dan drainase?","Abses periapeks akut dan pulpa nekrosis bila trepanasi lewat kamar pulpa gagal; pembengkakan <b>fluktuatif</b>."],
+["Kontraindikasi insisi?","Pembengkakan yang merata, pasien hemofilia atau leukemia, dan abses di dalam rongga anatomis."],
+["Skalpel dan lama tampon pada drainase?","Skalpel no. <b>11, 12, atau 15</b>; tampon dipasang <b>1–3 hari</b>. Drainase selalu didahului insisi."],
+["Beda apikoektomi, reseksi apeks, dan kuretase apeks?","Apikoektomi: memotong ujung akar. Reseksi apeks: menghaluskan/meratakan ujung akar. Kuretase apeks: membersihkan jaringan granulasi/kista di sekitar ujung akar."],
+["Apa syarat yang selalu mendahului ketiga bedah apeks?","Perawatan saluran akar — tujuannya mempertahankan gigi tetap di rongga mulut."],
+["Indikasi apikoektomi menurut Barnes (2002)?","Pengisian saluran akar gagal tapi tidak dapat dikeluarkan dari korona · fragmen instrumen patah di ujung akar · apeks sangat bengkok · delta apikal jelas atau ujung saluran berbentuk corong."],
+["Kontraindikasi lokal apikoektomi?","Inflamasi akut (insisi/drainase/trefinasi dulu) · pertimbangan anatomik (saluran mandibula, sinus maksilaris, foramen mentale, sinus nasalis) · apeks sulit dijangkau (gigi posterior) · prognosis jelek (akar pendek, periodontitis lanjut, fraktur vertikal)."],
+["Tujuh prinsip desain flap endo-bedah?","Dasar flap lebar (suplai darah) · hindari insisi di atas tulang rusak atau lesi periapeks · flap lebih besar dari lesi · hindari sudut tajam · insisi mencakup periosteum · jangan memotong papila interdental (ikut seluruhnya atau tidak sama sekali) · perluas insisi ke arah vertikal."],
+["Bentuk-bentuk flap endo-bedah?","Semilunar (daerah operasi kecil), trapezoidal (besar), rectangular, submarginal rectangular, dan mukoperiosteum penuh."],
+["Spesifikasi preparasi retrofilling?","Kavitas kelas I kedalaman <b>2–3 mm</b>; pemotongan ujung akar dibevel <b>± 45°</b> arah fasial-lingual. Bahan: MTA, bone graft, gingival pack."],
+["Kapan deposisi sementum baru mulai?","± hari ke-<b>12</b> dari fibroblas."],
+["Kapan anyaman trabekula dan tulang lamela terbentuk?","Trabekula dan osteosit hari ke-<b>12–14</b>; tulang lamela ± <b>30 hari</b> pasca operasi dan terlihat radiografis."],
+["Instruksi pasca endo-bedah?","Simpul jahitan tidak di atas garis insisi; jahitan dibuka <b>3–6 hari</b>; kompres es ± 20 menit; jangan mengangkat bibir untuk melihat daerah operasi; jangan merokok."],
+["Definisi dan arah potongan amputasi akar?","Pengangkatan satu/lebih akar gigi berakar ganda, dipotong di bagian berbatasan dengan mahkota — arah <b>horizontal</b>."],
+["Definisi dan arah potongan hemiseksi?","Pemisahan akar: molar mandibula buko-lingual lewat bifurkasi, molar maksila mesiodistal lewat furkasi; bagian rusak diangkat — arah <b>vertikal</b>."],
+["Definisi dan arah potongan bikuspidisasi?","Pemisahan seperti hemiseksi tetapi kedua mahkota dan akar dipertahankan lalu direstorasi menyerupai premolar — arah <b>buko-lingual</b>."],
+["Indikasi amputasi akar / hemiseksi?","Kerusakan furkasi berat · akar tidak dapat dirawat konvensional maupun bedah (instrumen patah, perforasi, kalsifikasi) · karies/perforasi/resorpsi akar · fraktur akar vertikal."],
+["Indikasi bikuspidisasi?","Perforasi furkasi, kerusakan furkasi karena penyakit periodonsium, karies servikal bukolingual ke dalam furkasi."],
+["Kontraindikasi amputasi/hemiseksi?","Akar tidak didukung tulang cukup, fusi akar, PSA tidak dapat dituntaskan; untuk bikuspidisasi juga furkasi dalam dan kerusakan periodonsium sangat luas."],
+["Jadwal kontrol dan restorasi pasca hemiseksi?","Kontrol pertama hari ke-<b>7</b>; persiapan restorasi <b>5 minggu</b> pasca operasi."],
+["Penyebab kegagalan amputasi/hemiseksi?","Karies, fraktur akar, tekanan oklusal berlebihan, prosedur yang salah, problem PSA, dan penyakit periodonsium."]
+],
+tfo:[
+["Definisi trauma oklusi (Carranza, 2019)?","Kerusakan jaringan periodontal akibat tekanan berlebihan yang melebihi kapasitas adaptif jaringan periodontal."],
+["Etiologi intrinsik trauma oklusi?","Morfologi akar, ketinggian prosesus alveolar, permukaan oklusal dan akar gigi yang menerima tekanan berlebih."],
+["Etiologi ekstrinsik trauma oklusi?","Penumpukan plak, aktivitas parafungsi, maloklusi iatrogenik, kehilangan tulang akibat kehilangan gigi."],
+["Penyebab spesifik trauma oklusi?","Tumpatan terlalu tinggi · protesa yang membebani gigi penyangga dan antagonisnya · gigi drifting/ekstrusi ke daerah kosong · pergerakan gigi akibat prosedur ortodontik yang menimbulkan hambatan saat menutup mulut."],
+["Beda trauma oklusi akut dan kronis?","Akut: tekanan mendadak (mengunyah benda keras, tumpatan/protesa buruk). Kronis: perubahan gradual (drifting, ekstrusi, bruxism) — <b>tanda klinisnya lebih signifikan</b> daripada akut."],
+["Beda trauma oklusi primer dan sekunder?","Primer: tekanan melebihi kapasitas adaptif periodonsium yang masih <b>sehat</b>. Sekunder: kapasitas adaptif sudah terganggu kehilangan tulang karena inflamasi, sehingga tekanan normal pun jadi berlebih."],
+["Tiga tahap respon jaringan?","Injury (kerusakan akibat tekanan berlebih) → repair (perbaikan langsung pada jaringan sehat) → remodelling adaptive (bila repair tidak sebanding, jaringan membentuk struktur baru)."],
+["Apakah trauma oklusi reversibel?","Ya — bila faktor traumatiknya dihilangkan, jaringan periodontal perlahan memperbaiki diri. Respon perbaikan lebih cepat pada usia muda."],
+["Tanda klinis trauma oklusi?","Kegoyangan gigi · sensitif terhadap tekanan · migrasi gigi · pelebaran ligamen periodontal · kerusakan permukaan oklusal karena kontak prematur · atrisi akibat bruxism."],
+["Tanda radiografis trauma oklusi?","Pelebaran ruang periodontal dengan penebalan lamina dura di aspek lateral akar, apikal, dan bifurkasi · kerusakan vertikal tulang alveolar pada septum interdental · radiolusensi dan kondensasi tulang alveolar · resorpsi akar."],
+["Nilai normal maximal interincisal opening dan gerak lateral/protrusif?","MIO <b>40–50 mm</b>; range gerak lateral dan protrusif <b>7–9 mm</b>."],
+["Apa saja pemeriksaan TMD yang dilakukan?","MIO, pola membuka/menutup (ada deviasi atau tidak), range gerak lateral dan protrusif, auskultasi bunyi sendi (clicking/krepitasi), palpasi TMJ, palpasi otot."],
+["Klasifikasi kegoyangan Miller?","Derajat 1: sedikit lebih besar dari normal. Derajat 2: < 1 mm ke segala arah. Derajat 3: > 1 mm ke segala arah termasuk vertikal dan rotasi."],
+["Cara tes kegoyangan gigi?","Dengan dua gagang instrumen, digerakkan bukal-lingual."],
+["Alat untuk identifikasi zona ICP dan indeks atrisi?","Mylar strip untuk ICP; Indeks Atrisi <b>Richards & Brown</b> skala <b>0–4</b> untuk atrisi."],
+["Kegunaan model pada artikulator?","Melihat kontak prematur saat menutup mulut dan hambatan saat ekskursi."],
+["Mengapa orang mengunyah satu sisi?","Maloklusi, karies di sisi lain, atau rasa tidak nyaman."],
+["Jalur plak pada kebiasaan mengunyah satu sisi?","Sisi yang tidak dipakai kehilangan efek self-cleansing → plak dan kalkulus menumpuk → gingivitis → periodontitis. Aliran saliva di sisi itu juga menurun."],
+["Berapa beban harian pada sisi yang dipakai mengunyah?","Meningkat hingga <b>57.600 lb/detik per hari</b> → kerusakan jaringan periodontal → TFO."],
+["Dampak lain mengunyah satu sisi?","Asimetri wajah (kekuatan gigitan lebih besar di sisi kunyah) dan deviasi mandibula akibat tekanan otot kunyah yang tidak seimbang, yang mengubah diskus artikularis dan prosesus kondilaris."],
+["Ringkasan kasus pada slide?","Dua pasien perempuan (22 dan 19 tahun), keluhan tidak nyaman saat mengunyah dan kebiasaan mengunyah satu sisi; articulating paper menunjukkan spot tebal pada oklusal gigi <b>23</b>. Diagnosis: trauma oklusi 23 e.c. mengunyah satu sisi."],
+["Rencana perawatan dan instruksi pada kasus itu?","Occlusal adjustment dengan selective grinding teknik <b>pointing</b> + DHE kebiasaan buruk. Kontrol setelah <b>7 hari</b> atau bila ada keluhan, jaga kebersihan mulut, hentikan kebiasaan mengunyah satu sisi."]
+],
+tekanan:[
+["Faktor apa yang menentukan efek tekanan eksternal pada PDL?","Besar kekuatan, arah, durasi, frekuensi, serta apakah tekanan langsung atau tidak langsung."],
+["Mengapa efek tekanan berbeda antar orang?","Bahkan pada orang yang sama pada waktu berbeda efeknya bisa berbeda — tergantung faktor-faktor di atas."],
+["Bentuk gangguan oklusal yang perlu dikenali?","Hambatan oklusal pada oklusi sentrik dan pada gerak artikulasi (blocking) · palatal bite · cross bite · kombinasinya dengan blocking, kontak prematur, atau crowding."],
+["Tanda tekanan eksternal pada jaringan?","PDL melebar · kegoyangan gigi derajat 1–3 · kerusakan tulang alveolar dari 1/3 servikal sampai 1/3 apikal."],
+["Efek tekanan ortodontik ringan?","Kurang dari tekanan pembuluh darah — iskemia ringan PDL simultan dengan pembentukan tulang dan resorpsi → pergerakan gigi kontinu. <b>Ini yang paling baik.</b>"],
+["Efek tekanan ortodontik sedang?","Melebihi tekanan pembuluh darah — PDL mengecil, resorpsi tulang lambat."],
+["Efek tekanan ortodontik kuat/berat?","Pembuluh darah ligamen di sisi tekanan hancur; iskemia dan degenerasi PDL lokal menghasilkan <b>hialinisasi</b> — pergerakan gigi justru lebih lambat."],
+["Efek tekanan ekstraoral selama pertumbuhan?","Membatasi perkembangan maksila ke depan dan mengubah angulasi bidang palatal; bila kuat dapat menimbulkan efek permanen pada tinggi wajah anterior."]
+],
+splinting:[
+["Definisi splinting periodontal?","Piranti untuk mengurangi kegoyangan gigi dengan menghubungkan gigi goyang ke gigi yang stabil — secara sementara, semi permanen, atau permanen."],
+["Mekanisme kerja splint?","Beberapa gigi diikat menjadi satu kesatuan sehingga tekanan didistribusikan ke semua gigi yang diikat."],
+["Apa yang <i>tidak</i> dilakukan splint?","Splint <b>tidak menguatkan gigi</b> — fungsinya hanya imobilisasi sampai jaringan periodontal memperbaiki diri."],
+["Faktor lokal penyebab kegoyangan?","Iritasi (plak, kawat orto) dan fungsional (bad habit)."],
+["Faktor sistemik penyebab kegoyangan?","Endokrin, malnutrisi, obat-obatan, psikologis, genetik, penyakit metabolisme, gangguan hematologis, pengaruh logam, penyakit kronis."],
+["Enam fungsi dan tujuan splinting?","Sebagai <i>rest</i> (memungkinkan pemulihan luka) · membantu fungsi saat jaringan belum utuh · menstabilkan kegoyangan · mendistribusikan tekanan · mendukung tindakan regeneratif · kenyamanan pasien."],
+["Indikasi splinting?","Kegoyangan pada periodontitis kronis yang mengganggu kenyamanan · gigi dengan trauma oklusi sekunder · penunjang bedah perio regeneratif · trauma dental akut · kegoyangan pasca ortodontik · kepentingan prostetik yang butuh banyak gigi penyangga."],
+["Kontraindikasi splinting?","<i>Hopeless teeth</i> (luksasi derajat 3) · kurangnya gigi penyangga · <b>belum dilakukan occlusal adjustment</b> pada gigi dengan trauma oklusi · OH buruk dan pasien non-kooperatif · bad habit yang sulit dihilangkan."],
+["Apakah splinting berdiri sendiri?","Tidak — selalu dipakai bersama perawatan periodontal lainnya."],
+["Dua sumbu klasifikasi splint?","Waktu pemakaian (temporer, semi permanen, permanen) dan bentuk (cekat atau lepasan; ekstrakoronal/eksternal atau intrakoronal/internal)."],
+["Contoh splint sementara?","Kawat dan flowable resin — untuk jangka singkat selama terapi periodontal."],
+["Contoh splint provisional/semi permanen?","Resin komposit dengan preparasi, wire-komposit dengan preparasi — beberapa bulan sampai beberapa tahun, agar klinisi dapat mengamati respon periodonsium."],
+["Contoh splint permanen?","Piranti cekat atau lepasan (bridge) untuk imobilisasi menetap."],
+["Kelemahan splint paling sederhana pada insisivus?","Estetik kurang baik dan menghalangi kontrol plak."],
+["Sampai mana cakupan pensplinan?","Kaninus ke kaninus atau premolar pertama ke premolar pertama."],
+["Mengapa wire ligature kini jarang dipakai?","Alasan estetik (kawat 2 lapis, diameter 0,008–0,01). Yang umum sekarang komposit dengan etsa; akrilik bening untuk splint sementara lepasan."],
+["Alat dan bahan splinting?","Alat diagnostik · needle holder/hemostat · tang potong wire · wire <b>0,25–0,4 mm</b> · resin komposit atau flowable · etsa · bonding dan microbrush · rubber dam · light cure · bur poles."],
+["Persiapan sebelum splinting?","Pemeriksaan status periodontal dan derajat kegoyangan, foto panoramik atau periapikal, lalu gigi dibersihkan dengan pumice."],
+["Cara mengukur panjang wire?","Ukur panjang alur kerja dengan wire lalu <b>kalikan 2</b>; potong fibre sesuai panjang itu dan letakkan di glass plate."],
+["Waktu etsa dan penyinaran bonding?","Etsa asam fosforik <b>30%</b> selama <b>30 detik</b>, bilas, keringkan; bonding disinar <b>10 detik</b>."],
+["Waktu penyinaran flow composite akhir?","<b>20 detik per gigi</b>. Penyinaran bertahap tiap gigi dengan sinar dibatasi cement spatel yang ditekan ke interdental."],
+["Instruksi pasca splinting?","Tidak makan, minum, meludah, atau berkumur selama <b>1 jam</b>; jaga OH di rumah; bila splint lepas segera kontrol."],
+["Jadwal kontrol berkala pasca splinting?","<b>7 hari, 1 bulan, 3 bulan, 6 bulan</b>."]
+],
+oa:[
+["Definisi occlusal adjustment (Reddy, 2011)?","Pengurangan selektif pada permukaan oklusal untuk mencapai oklusi yang stabil dan non-traumatik."],
+["Tujuan selective grinding?","Mengurangi beban oklusal agar gigi berkontak dan berfungsi tanpa kontak prematur maupun hambatan."],
+["Tiga hasil akhir yang diharapkan?","Posisi sentrik: kontak stabil RA–RB. Gerak lateral: kontak pada anterior, tidak ada pada posterior. Gerak protrusif: kontak pada anterior, tidak ada pada posterior."],
+["Bentuk bur yang dipakai?","Diamond bentuk <b>wheel</b> dan <b>football</b>."],
+["Arti kode warna pita bur?","Merah (30 mikron) untuk groove sempit · kuning untuk groove bagian luar · hijau untuk merapikan dataran oklusal dan tonjol · biru hati-hati karena mengurangi dengan cepat. Tungsten carbide untuk poles akhir."],
+["Apa itu grooving (Glickman, 1972)?","Mengembalikan kedalaman developmental groove yang mendangkal akibat keausan, memakai bur runcing."],
+["Apa itu spheroiding dan batasannya?","Pembulatan dengan bur tapered, gerakan seperti mengecat dari 2–3 mm mesial/distal dan 2–3 mm dari tepi oklusal ke arah apikal dari tanda prematuritas. <b>Tinggi cusp jangan sampai berkurang.</b>"],
+["Apa itu pointing?","Memperbaiki kembali kontur cusp yang runcing, memakai bur tapered — teknik yang dipakai pada laporan kasus trauma oklusi."],
+["Posisi rahang saat prosedur pada pasien?","Relasi sentrik; pasien diminta menutup mulut perlahan dan ditanya kontak mana yang terasa pertama dan mengganggu."],
+["Tanda kontak yang baik pada articulating paper?","<b>Cusp to fossa</b> atau <b>cusp to marginal ridge</b>. Noda pada sisi miring menandakan hubungan kontak yang tidak baik."],
+["Bagaimana mengoreksi noda pada sisi miring?","Kurangi dengan bur stone hijau sampai noda merata dan tidak ada gerakan meluncur saat oklusi."],
+["Kontak mana yang boleh diterima saat gerak lateral?","Kontak pada <b>cusp bukal</b>, bukan cusp lingual. Kontak cusp lingual saat gerakan mediotrusif sisi penyeimbang dihilangkan."],
+["Bagaimana teknik dua warna?","Articulating paper <b>biru</b> untuk kontak lateral dan protrusif, lalu <b>merah</b> untuk relasi sentrik. Kurangi yang biru tanpa mengubah yang merah, sampai biru hilang kecuali pada kaninus dan merah tersisa pada cusp posterior."],
+["Empat prinsip selective grinding?","1) Prioritaskan gigi yang telah ditambal, tambalan buruk, mahkota tidak baik, gigi berposisi tidak baik · 2) Modifikasi hanya pada enamel permukaan oklusal · 3) Pengurangan dengan <b>memperdalam fossa dan groove</b>, bukan mengurangi tonjol · 4) Pengurangan merata pada kedua gigi yang berkontak."],
+["Koreksi hambatan sisi non-working pada artikulator?","Memperdalam lereng palatal cusp RA dan lereng bukal cusp RB."],
+["Koreksi hambatan sisi working pada artikulator?","Memperdalam lereng bukal cusp RA dan lereng lingual RB."],
+["Kapan koreksi dinyatakan selesai?","Bila pin insisal tetap menempel pada meja insisal."]
+],
+antikoagulan:[
+["Definisi hemostasis?","Proses dinamik yang diregulasi cermat untuk memelihara fluiditas darah, memperbaiki cedera vaskular, dan membatasi kehilangan darah, sekaligus menghindari trombosis dan kurangnya perfusi organ vital."],
+["Beda trombus dan embolus?","Trombus: bekuan yang <b>menempel</b> di dinding pembuluh darah. Embolus: bekuan intravaskular yang <b>mengambang</b>."],
+["Apa yang dilepaskan endotelium sehat dan intak?","<b>Prostasiklin (PGI₂)</b> ke plasma."],
+["Rantai kerja prostasiklin pada trombosit?","PGI₂ berikatan dengan reseptor membran trombosit → sintesis cAMP → cAMP menstabilkan reseptor <b>GP IIb/IIIa</b> dalam keadaan inaktif dan menghambat pelepasan granula berisi agen agregasi atau Ca²⁺."],
+["Faktor pembekuan I sampai IV?","I fibrinogen · II protrombin · III tromboplastin jaringan · IV kalsium."],
+["Faktor pembekuan V, VII, VIII, IX?","V proakselerin · VII prokonvertin · VIII faktor antihemofilia (AHF) · IX faktor Christmas / komponen tromboplastin plasma (PTC)."],
+["Faktor pembekuan X sampai XIII?","X faktor Stuart-Power · XI plasma tromboplastin antecedent (PTA) · XII faktor Hageman · XIII faktor stabilisator fibrin."],
+["Faktor pembekuan tanpa nomor?","Protein C dan S, serta plasminogen."],
+["Contoh obat penghambat agregasi trombosit?","Aspirin · ticlopidine & clopidogrel · abciximab · eptifibatide & tirofiban · dipyridamole."],
+["Contoh antikoagulan penghambat trombin?","Heparin dan LMWH."],
+["Antikoagulan parenteral lain selain heparin?","Lepirudin, argatroban, dan fondaparinux (pentasakarida sintetis)."],
+["Contoh antagonis vitamin K?","Warfarin dan dicumarol."],
+["Contoh obat trombolitik?","Alteplase, streptokinase, dan anistreplase."],
+["Heparin, LMWH, dan pentasakarida termasuk golongan apa?","Inhibitor trombin <b>tak langsung</b>."]
+],
+ikga:[
+["Apa saja evaluasi pra-operasi pencabutan pada anak?","Informed consent (diisi orang tua/wali), evaluasi medis, evaluasi gigi, radiografi, hematologi, tumbuh kembang, evaluasi perilaku."],
+["Mengapa pasca operasi anak lebih kompleks?","Penatalaksanaan metabolik anak lebih kompleks daripada dewasa — perhatikan asupan kalori, manajemen cairan dan elektrolit, serta transfusi darah bila perlu."],
+["Apa langkah pertama behavior management?","<b>Komunikasi</b> — membuat pasien nyaman dan menjelaskan manfaat perawatan."],
+["Apa itu tell–show–feel–do?","Menggambarkan prosedur dengan cara yang tidak menakuti."],
+["Contoh eufemisme pada anak?","Membandingkan ujung jarum dengan gigitan nyamuk."],
+["Kapan blokbite dan modeling dipakai?","Blokbite untuk pasien yang kesulitan membuka mulut lama; modeling bila teman dekat atau saudara kandung membantu pasien lebih tenang."],
+["Kapan physical restraints dipakai?","Metode <b>paling akhir</b> bila pasien sudah tidak kooperatif."],
+["Isi universal precaution?","APD: gloves, mask, gown, faceshield, protective eyewear. Lepas aksesoris tangan, tutup luka dengan perban, cuci tangan sabun antiseptik <b>step 1–7 selama 2–6 menit</b>."],
+["Definisi dan macam anestesi lokal?","Menghilangkan nyeri sementara tanpa hilangnya kesadaran. Macam: topikal, infiltrasi, blok, intraligamen."],
+["Syarat obat anestesi lokal yang baik?","Efek anestesi baik · tidak alergenik · stabil dalam larutan dan mudah dibiotransformasi · steril/dapat disterilkan dengan panas · toksisitas rendah · tidak mengiritasi jaringan · tidak menimbulkan perubahan permanen pada saraf · efektif injeksi maupun topikal · onset cepat dengan durasi cukup."],
+["Tiga golongan kimia anestesi lokal?","Ester (kokain, benzokain, prokain, tetrakain, kloroprokain, propoksikain) · amida (lidokain, mepivakain, bupivakain, artikain, prilokain, ropivakain) · quinoline (centbucridine)."],
+["Cara pakai anestesi topikal yang benar?","Keringkan mukosa → oleskan melebihi area suntikan ± <b>15 detik</b> → pertahankan pada mukosa minimal <b>2 menit</b>. Kesalahan tersering: operator tidak memberi waktu cukup."],
+["Sampai kedalaman berapa anestesi topikal efektif?","Hanya <b>2–3 mm</b>."],
+["Dosis maksimum anestesi lokal secara umum?","<b>4,4 mg/kg BB</b>."],
+["Lama kerja dan dosis maksimum Lidokain 2% + epinefrin 1:100.000?","Lama kerja <b>3–5 jam</b>, maksimum <b>4,4 mg/kg</b> (Xylocaine)."],
+["Lama kerja dan dosis maksimum Mepivakain 3% tanpa vasokonstriktor?","<b>2–3 jam</b>, maksimum <b>4,4 mg/kg</b> (Carbocaine)."],
+["Lama kerja dan dosis maksimum Prilokain 4% + epinefrin 1:200.000?","<b>3–8 jam</b>, maksimum <b>6,0 mg/kg</b> (Citanest Forte)."],
+["Lama kerja dan dosis maksimum Bupivakain 0,5% + epinefrin 1:200.000?","<b>4–9 jam</b>, maksimum <b>1,3 mg/kg</b> (Marcaine)."],
+["Durasi anestesi pulpa dan jaringan lunak lidokain 2% + epi 1:100.000?","Pulpa <b>60 menit</b>, jaringan lunak <b>3–5 jam</b>."],
+["Mengapa 1:100.000 lebih disukai daripada 1:50.000?","Epinefrin 1:50.000 dua kali lipat — terutama dihindari pada lansia dan pasien ASA III–IV dengan riwayat kardiovaskular. 1:50.000 hanya disarankan untuk hemostasis."],
+["Berapa lama lidokain 2% tanpa vasokonstriktor?","Anestesi pulpa hanya <b>5–10 menit</b> karena vasodilatasi."],
+["Keunggulan mepivakain HCl 2% + levonordefrin 1:20.000?","Onset lebih cepat dan efek lebih lama daripada lidokain."],
+["Mengapa mepivakain 3% tanpa vasokonstriktor cocok untuk anak?","Paling banyak dipakai untuk anak dan cocok untuk geriatri; anestesi pulpa <b>20–40 menit</b>."],
+["Bahaya prilokain 4%?","Metabolitnya dapat memicu <b>methemoglobinemia</b> — hindari pada anemia, gagal jantung, dan tanda gagal napas; dipakai dalam jumlah sedikit."],
+["Potensi bupivakain dan kapan tidak dianjurkan?","<b>4× lidokain</b> untuk prosedur panjang (anestesi pulpa > 90 menit); tidak dianjurkan pada pasien muda karena risiko cedera jaringan lunak akibat <b>self-mutilation</b>."],
+["Karakteristik prokain?","Vasodilator paling ampuh, onset lambat <b>6–10 menit</b>, alergi karena metabolit <b>PABA</b>, dan mengurangi efektivitas sulfonamida."],
+["Tanda overdosis anestesi lokal?","Kepala pusing ringan, grogi, sensasi berkedut (twitching), tinnitus, berkeringat, muntah, penurunan denyut jantung–tekanan darah–laju napas, sampai kejang tonik-klonik."],
+["Beda nerve block, local infiltration, dan field block?","Nerve block: dekat batang saraf utama. Local infiltration: pada ujung saraf terminal kecil. Field block: dekat ujung cabang saraf terbesar, mencegah jalannya impuls ke SSP."],
+["Teknik dan dosis infiltrasi maksila/mandibula?","Penetrasi <b>2–3 mm apikal</b> dari mucogingival junction, kedalaman tidak lebih dari 2–3 mm, deponir <b>0,5 ml</b>."],
+["Area teranestesi blok infraorbital?","Insisif, kaninus, premolar, akar mesiobukal M1, bibir atas, dan sebagian hidung sisi sama."],
+["Patokan blok infraorbital?","Bidang oklusal maksila <b>45°</b> terhadap lantai; garis imajiner notch supraorbital–pupil–foramen infraorbital–premolar kedua."],
+["Area dan teknik blok alveolar superior posterior?","Molar RA kecuali akar mesiobukal M1, prosesus alveolar bukal, periosteum, membran mukosa. Insersi <b>½–⅔ inci</b> ke atas, ke dalam, ke belakang; harus dikombinasi injeksi palatal untuk ekstraksi."],
+["Teknik blok nasopalatinus?","Injeksi sangat sakit — perlu injeksi pendahuluan di jaringan interseptal labial (<b>0,25 ml</b>), lalu masuk foramen insisivum ± <b>0,5 cm</b>, injeksi <b>0,25–0,5 ml</b> perlahan. Area: bagian anterior palatum keras sampai premolar."],
+["Patokan blok palatinus mayor?","Foramen antara <b>M2 dan M3</b>, ± <b>1 cm</b> dari marjin gingiva palatal ke arah garis median; kedalaman kanalis tidak lebih dari 1,5 inci."],
+["Patokan blok alveolar inferior?","Raba linea oblique externa dan batas anterior ramus, geser ± <b>10 mm</b> ke posterior untuk mendapat coronoid notch — sejajar horizontal dengan foramen mandibularis. Jarum dari sisi kontralateral antara P1 dan P2."],
+["Alat ekstraksi gigi sulung?","Alat diagnostik, saliva ejector, tang ekstraksi gigi anak (anterior/posterior/sisa akar, RA dan RB), bein, spuit dengan jarum <b>27–30 gauge</b>."],
+["Bahan ekstraksi gigi sulung?","Cotton roll dan pellet, bahan anestesi topikal, kapas steril, <b>povidone iodine 3%</b>, lidokain komp. 2% dengan adrenalin <b>1:80.000</b>, tampon steril."],
+["Dosis dan cara anestesi infiltrasi pada anak?","Keringkan, insersikan jarum dengan bevel menghadap tulang pada mucobuccal fold dan lingual/interdental sampai setinggi apeks, aspirasi, deponir perlahan <b>0,5 cc labial dan 0,5 cc lingual/interdental</b> (15–30 detik), cek kebas."],
+["Letak beak tang saat ekstraksi gigi sulung?","Sejajar sumbu gigi; ujung tang mengenai <b>servikal gigi</b> dan sedikit masuk saku gusi — <b>bukan mahkota</b>."],
+["Gerakan ekstraksi anterior sulung?","Gerakan rotasi lalu ditarik satu kali ke arah incisolabial/incisobuccal."],
+["Kehati-hatian pada ekstraksi posterior sulung?","Bebaskan gingiva dengan elevator dan hindari gerakan bukal berlebihan karena merusak attached gingiva."],
+["Yang dilakukan setelah gigi sulung tercabut?","Periksa gigi yang dicabut · buang jaringan granulasi · evaluasi dinding soket dengan kuret perlahan (bisa melukai benih gigi) · cek sampai apeks untuk kista/granuloma dan enukleasi perlahan · palpasi bukal-lingual/fasial-palatal · eksostosis diratakan dengan rongeur atau bone file · suturing bila luka terlalu besar."],
+["Kapan anestesi topikal saja sudah cukup?","Gigi sulung/persistensi/radiks dengan luksasi dan rotasi <b>derajat 3–4</b>, atau gigi yang tidak lagi didukung tulang alveolus dan hanya didukung jaringan lunak."],
+["Kapan perlu anestesi infiltrasi?","Gigi tidak dapat direstorasi/dirawat endodontik · gigi sulung nekrosis pulpa yang jadi fokal infeksi · gigi persistensi tanpa luksasi atau luksasi derajat 1–2 · sisa akar tanpa luksasi atau luksasi derajat 1–2 · gigi sulung luksasi derajat 3 akibat trauma."],
+["Posisi rahang atas pasien anak dan alasannya?","Tidak boleh lebih dari <b>45°</b> terhadap lantai — mencegah inhalasi atau tertelannya benda asing."],
+["Ketinggian kerja untuk RA dan RB?","RA: tempat operasi ± <b>8 cm</b> di bawah bahu operator. RB: kursi pasien ± <b>16 cm</b> di bawah ketinggian kursi operator."],
+["Fungsi tangan non-dominan?","Menjaga pergerakan kepala dan meretraksi jaringan."]
+],
+"sl-anestesi":[
+["Posisi pasien saat anestesi lokal dan alasannya?","<b>Semisupine</b> — lebih nyaman, anestesi lebih mudah, risiko syncope berkurang."],
+["Sikap operator yang benar?","Tenang dan tidak ragu; jangan perlihatkan alat injeksi dalam lapangan pandang pasien. Bila perlu sedasi (nitrous oxide–oksigen, diazepam)."],
+["Urutan persiapan jaringan?","Anestesi topikal → olesi antiseptik pada titik insersi → bersihkan saliva, sisa makanan, dan sisa bahan topikal."],
+["Ukuran syringe dan jarum intraoral?","Disposable syringe <b>2–3 ml</b>; jarum <b>25 atau 27-gauge</b>."],
+["Hubungan angka gauge dengan diameter lumen?","Makin <b>kecil</b> angka gauge, makin <b>besar</b> diameter lumen."],
+["Jarum apa yang paling umum dipakai?","Jarum pendek 30-gauge dan jarum panjang 27-gauge; 27-gauge dipakai bila aspirasi positif rendah dan penetrasi tidak dalam (jarum tipis lebih mudah defleksi)."],
+["Tiga aturan saat menyuntik?","1) Aspirasi sebelum deponasi (jarum kecil perlu waktu aspirasi lebih lama) · 2) Deponir perlahan, ideal <b>2 ml/menit</b> · 3) Tarik jarum perlahan."],
+["Kapan efek anestesi tercapai?","Beberapa detik sampai 10 menit; umumnya dalam <b>5 menit</b>."],
+["Empat klasifikasi teknik berdasarkan area teranestesi?","Nerve block (batang saraf utama) · field block (cabang saraf terminal) · local infiltration (ujung saraf terminal) · surface anesthesia (topikal pada permukaan mukosa)."],
+["Klasifikasi berdasarkan tempat insersi?","Submucosal · supra/paraperiosteal · subperiosteal (lebih sakit) · intraosseous (intraseptal, paling efektif untuk anak) · papillary."],
+["Patokan dan dosis infiltrasi N. alveolaris superior anterior?","Mukolabial fold sedikit mesial kaninus, arahkan ke apeks kaninus — deponir <b>1,5 ml</b>."],
+["Patokan dan dosis blok N. nasopalatinus?","Batas lateral papilla insisivus, sedalam ± <b>0,5 cm</b> sampai menyentuh tulang — deponir <b>0,25–0,5 ml</b>."],
+["Patokan dan dosis infiltrasi N. alveolaris superior medius?","Mukobukal fold di atas premolar kedua, sedikit di atas apeks — deponir <b>1,5 ml</b>."],
+["Patokan dan dosis infiltrasi N. alveolaris superior posterior?","Mukobukal fold antara akar distobukal M2 dan mesiobukal M3; sudut <b>45°</b> terhadap bidang medial-posterior-superior; kedalaman <b>1,5–2 cm</b> — deponir <b>1,0–1,8 ml</b>."],
+["Risiko injeksi ASA posterior yang terlalu dalam?","Melebihi <b>2 cm</b> atau terlalu ke lateral → jarum menembus <b>pterygoid venous plexus</b> → hematoma."],
+["Patokan dan dosis blok N. palatinus mayus?","Foramen palatinus antara M2 dan M3, <b>1 cm</b> dari gingival margin ke arah median; insersi dari kontralateral — deponir <b>0,5 ml</b>."],
+["Patokan dan dosis blok N. infraorbita?","Foramen pada garis khayal pupil–infraorbital notch–bukal premolar kedua; infraorbital depression <b>5–10 mm</b> di bawah notch; jarum didorong ± <b>1,5 cm</b> melewati fossa canina — deponir <b>1,0 ml</b>."],
+["Mengapa mandibula hampir selalu dengan blok?","Sarafnya relatif mudah dicapai dan korteks mandibula terlalu padat sehingga injeksi supraperiosteal tidak efektif kecuali di regio anterior."],
+["Area dan dosis blok N. mentalis?","Bibir bawah dan mukosa labial fold anterior dari foramen mentalis — deponir <b>0,5–1 ml</b>."],
+["Apa yang membedakan blok N. insisivus?","Jarum masuk <b>tepat ke foramen mentalis</b>; area: premolar, kaninus, insisif, bibir bawah, dagu sisi sama."],
+["Area dan dosis blok N. lingualis?","Dua pertiga anterior lidah, dasar mulut, mukosa lingual sampai linea mediana — deponir <b>0,5 ml</b>."],
+["Area dan dosis blok N. alveolaris inferior?","Korpus mandibula, semua gigi RB sampai linea mediana, gingiva bukal anterior M1, bibir bawah, kulit dagu — deponir <b>1–1,5 ml</b>."],
+["Urutan palpasi teknik indirek blok AI?","Mukobukal fold → linea oblique externa → batas anterior ramus → <b>coronoid notch</b>."],
+["Langkah lengkap teknik indirek blok AI?","Insersi dari kontralateral antara P1 dan P2 tepat di pertengahan kuku telunjuk sampai menyentuh tulang → tarik sedikit → sejajarkan dengan dataran oklusal → dorong ke posterior melewati linea oblique interna → kembalikan arah syringe → dorong sampai menyentuh tulang → tarik ±1 mm → aspirasi → deponir 1–1,5 ml."],
+["Cara menganestesi N. lingualis setelah blok AI?","Tarik jarum sampai tersisa <b>1 cm</b> di jaringan lalu deponir <b>0,5 ml</b>."],
+["Teknik direk blok alveolaris inferior?","Ibu jari pada coronoid notch, telunjuk di posterior ramus; syringe paralel bidang oklusal, insersi dari regio premolar kontralateral antara pterygomandibular raphe dan tendon profundus m. temporalis, sampai menyentuh ramus pada kedalaman <b>1,5–2 cm</b>, tarik sedikit, deponir <b>1,0–1,5 ml</b>."],
+["Berapa poin checklist regio anterior RA dan blok AI?","Anterior RA <b>8 poin</b>; blok N. alveolaris inferior <b>9 poin</b>."],
+["Alat dan bahan yang disiapkan di checklist?","Disposable syringe 3 ml, pehacaine 2 ml, povidon iodine 10%, kaca mulut, pinset dental. Cek bahan baru, indikasi–kontraindikasi, sterilitas, expired date."],
+["Cara asepsis di checklist?","Povidon iodine <b>10%</b> dengan gerakan sirkuler."],
+["Arah bevel saat insersi?","Bevel menghadap <b>tulang</b>, insersi di mukolabial fold sejajar sumbu gigi sampai apikal."],
+["Anestetikum yang dipakai di skills lab?","Lidokain 2% + epinefrin 1:100.000 — untuk prosedur 5–10 menit maupun sampai 90 menit."]
+],
+"sl-ekstraksi":[
+["Indikasi ekstraksi gigi?","Karies yang tidak dapat dirawat konservatif · malposisi · resorpsi tulang alveolar sepanjang <b>2/3 akar</b> · permintaan atas indikasi ortodonti atau pembuatan denture · gigi karies/kelainan periodontal pada pasien yang akan kemoterapi atau radioterapi · fraktur vertikal · fraktur pada 1/3 apikal."],
+["Kontraindikasi relatif ekstraksi?","Keradangan akut, perikoronitis akut, stomatitis akut, sinusitis akut, keganasan, daerah bekas terapi radiasi (risiko <b>radio-osteomielitis</b>)."],
+["Bagaimana menangani pasien DM tidak terkontrol?","Konsultasi dokter; anestesi lokal <b>tanpa adrenalin</b> dan tunggu sampai terkontrol."],
+["Mengapa kelainan katup jantung perlu profilaksis antibiotik?","Untuk mencegah <b>SBE</b> (subacute bacterial endocarditis)."],
+["Trimester mana yang paling aman untuk ekstraksi?","Trimester <b>kedua</b>."],
+["Posisi operator dan fiksasi untuk RA anterior & posterior kiri?","Operator kanan depan; ibu jari palatal, telunjuk bukal/labial."],
+["Posisi operator dan fiksasi untuk RA kanan?","Operator kanan depan; ibu jari <b>bukal</b>, telunjuk <b>palatal</b>."],
+["Posisi operator dan fiksasi untuk RB anterior & posterior kanan?","Operator kanan samping (posterior kanan); ibu jari lingual, telunjuk labial, tiga jari lain menyangga rahang."],
+["Posisi operator dan fiksasi untuk RB posterior kiri?","Operator kanan depan; ibu jari di dagu menyangga, telunjuk bukal, jari tengah lingual."],
+["Posisi dental unit saat ekstraksi?","Semisupine <b>45°</b> terhadap lantai dan rongga mulut pasien sejajar siku operator."],
+["Dua jenis pegangan fiksasi?","<b>Pinch grasp</b> dan <b>sling grasp</b>."],
+["Tang dan gerakan anterior maksila?","Tang lurus dari beak sampai handle, ujung beak terbuka. Tekanan apikal → luksasi bukal-palatal → <b>rotasi</b> distal lalu mesial (akar konus). Kaninus perlu gaya lebih besar."],
+["Tang dan gerakan premolar maksila?","Tang bentuk S, ujung beak terbuka. Apikal → luksasi bukal lalu palatal, sesekali <b>figure-eight</b>, traksi minimal."],
+["Tang dan gerakan molar maksila?","Tang bentuk S, satu sisi beak tajam diletakkan di <b>aspek bukal</b>. Apikal → bukal-palatal bertahap. Gaya besar sejak awal berisiko fraktur lempeng bukal dan tuberositas maksila."],
+["Tang dan gerakan anterior–premolar mandibula?","English/Ash atau No. 151, beak membengkok <b>90°</b>. Apikal → luksasi ringan ke lingual lalu segera ke bukal → rotasi (akar tunggal konus)."],
+["Tang dan gerakan molar mandibula?","Membengkok 90°, <b>kedua sisi beak tajam</b>. Tekanan apikal kuat, beak masuk ke <b>furkasi</b> → luksasi kuat bukal-lingual → rotasi atau figure-eight."],
+["Alat untuk melepaskan perlekatan jaringan lunak di leher gigi?","Elevator periosteal <b>Moldt No. 9</b> atau <b>Woodson No. 1</b> — sekaligus memastikan anestesi jaringan lunak sudah adekuat."],
+["Cara memakai elevator lurus sempit?","Diinsersikan di mesial tegak lurus gigi lalu diputar, bertumpu pada <b>krista interproksimal</b>, bukan gigi sebelahnya."],
+["Apa yang dikerjakan operator pasca ekstraksi?","Periksa fragmen tulang/gigi/kalkulus/tumpatan yang tertinggal · ambil jaringan patologis apikal dengan kuret · massage soket untuk mengembalikan bentuk · soket lebar dijahit · tekan tampon ± <b>30 menit</b> · resepkan analgetik."],
+["Jadwal kompres pasca ekstraksi?","Kompres <b>es</b> hari ke-1–2 (sampai 48 jam), kompres <b>hangat</b> hari ke-3."],
+["Instruksi untuk pasien pasca ekstraksi?","Gigit tampon <b>30–60 menit</b> lalu dibuang · makan lunak di sisi berlawanan satu hari · hindari makanan-minuman panas, hangat, pedas · jangan berkumur keras, meludah, menghisap luka, atau merokok selama <b>24 jam</b> pertama · minum obat teratur · hubungi operator bila perdarahan atau nyeri hebat."],
+["Berapa poin checklist ekstraksi dan gigi apa yang dipakai?","<b>7 poin</b>, untuk gigi <b>11</b> (anterior RA) dan gigi <b>46</b> (posterior kanan RB)."],
+["Apa saja 7 poin checklist ekstraksi?","Posisi operator · alat-bahan · persiapan pasien-operator · fiksasi · teknik ekstraksi dengan <b>palm grasp</b> · prosedur pasca tindakan · instruksi pasca tindakan."]
+],
+"sl-suturing":[
+["Tiga tujuan suturing?","Menahan flap pada posisi semula · mencegah perdarahan pasca operasi · mencegah terbukanya luka pasca ekstraksi sehingga tidak terkontaminasi sisa makanan."],
+["Cara memegang needle holder dan pinset chirurgis?","Keduanya <b>pen grasp</b>; pada needle holder telunjuk sebagai pengarah, pinset chirurgis di tangan kiri."],
+["Tiga bagian jarum?","<b>Point</b> (penetrasi) · <b>body</b> · <b>tail</b> (penampang segi empat, tempat needle holder)."],
+["Klasifikasi jarum menurut bentuk?","Straight, curved, threaded, fused."],
+["Beda jarum cutting dan non-cutting?","Cutting: penampang segitiga, untuk jaringan sukar ditembus. Non-cutting/tapered: bulat, untuk jaringan lunak."],
+["Beda jarum atraumatic dan traumatic?","Atraumatic: jarum-benang menyatu. Traumatic: berlubang, ada penebalan di sambungan."],
+["Jarum ideal untuk intraoral?","<b>3/8 lingkaran dengan cutting edge terbalik</b>."],
+["Jarum untuk interseptal space dan flap palatal?","Jarum <b>bulat ½ lingkaran tapered point</b>."],
+["Kelebihan dan kekurangan benang absorbable?","Kelebihan: elastis, bisa untuk jaringan dalam (submukosa, subkutan). Kekurangan: risiko reaksi jaringan dan relatif mahal."],
+["Lama absorpsi catgut dan chromic gut?","Catgut <b>3–5 hari</b>; chromic gut (dilapisi asam kromat/potassium bichromat) ± <b>7 hari</b>."],
+["Benang absorbable lain selain catgut?","Benang kolagen, polyglycolic acid (sulit disimpul), kangaroo tendon (untuk fraktur tulang)."],
+["Kelebihan benang non-absorbable?","Tidak mengiritasi, jarang alergi, daya tegang kuat, murah, mudah disterilkan, simpul tidak mudah slip — tapi harus diambil."],
+["Jenis benang non-absorbable dan penggunaannya?","Silk (organik, paling umum intraoral) · nylon · cotton (mudah lengket jaringan) · metal (hanya untuk splinting fraktur rahang)."],
+["Di mana needle holder memegang jarum?","Pada <b>¾ bagian dari ujung</b> — jangan pada bagian belakang yang paling lemah dan mudah patah."],
+["Bagaimana jarum masuk ke jaringan?","Tegak lurus permukaan jaringan, mengikuti kurvanya, berjarak ± <b>2,5 mm</b> dari tepi luka tiap sisi."],
+["Dua peringatan saat menjahit?","Pada jarum cutting edge hindari tekanan lateral (jaringan sobek); jangan menarik jarum terlalu kencang (iskemia tepi luka)."],
+["Aturan peletakan simpul?","Simpul jangan terlalu kencang dan <b>jangan diletakkan di atas garis insisi</b>."],
+["Apa yang dilakukan bila ada kelebihan jaringan?","Potong dulu <i>flabby tissue</i> sebelum menjahit."],
+["Angka kunci teknik interrupted?","Jarum masuk <b>3–4 mm</b> dari tepi luka · benang dipotong <b>8–10 mm</b> · jarak antar jahitan <b>5–8 mm</b> · simpul diletakkan di salah satu sisi."],
+["Ciri teknik continuous?","Simpul awal tidak dipotong; jarum ditusukkan tegak lurus dan diagonal terhadap garis luka; simpul akhir di ujung."],
+["Indikasi locking continuous?","Gingival margin pasca alveolektomi, retromolar pad, dan edentulous ridge — modifikasi continuous dengan loop."],
+["Urutan figure of eight pada soket pasca ekstraksi?","Masuk <b>mesiobukal</b> → keluar <b>mesiolingual</b> → masuk <b>distobukal</b> → keluar <b>distolingual</b> → simpul."],
+["Indikasi mattress vertikal dan horizontal?","Vertikal untuk region leher (tegak lurus garis insisi); horizontal untuk jaringan bertegangan rendah dan flap di atas cavity bone (mis. pengambilan kista rahang), sejajar arah insisi."],
+["Ciri jahitan subcuticular?","Jahitan intrakutan, mengurangi keloid, simpul ditanam terbalik."],
+["Kapan square knot dipakai?","Simpul dasar, dipakai bila ujung luka sejajar — untuk gut, nylon, cotton."],
+["Cara membuat surgeon knot dan indikasinya?","Ikatan pertama <b>2 putaran</b> untuk cegah slip, kedua <b>1 putaran</b> — untuk benang sintetis licin."],
+["Mengapa granny knot tidak direkomendasikan?","Mudah slip — tidak dipakai di bedah mulut."],
+["Tiga cara membuat simpul?","Satu tangan, dua tangan, atau <i>instrument tie</i> dengan needle holder."],
+["Lima poin checklist suturing?","Persiapan dan penjelasan fungsi alat · memasang jarum-benang pada needle holder · interrupted · continuous simple · figure of eight — masing-masing sampai pemotongan sisa benang dengan ukuran yang tepat."]
+],
+"sl-wiring":[
+["Tujuan skills lab dental wiring?","Tatalaksana fraktur dentoalveolar sederhana dengan reduksi tertutup — fiksasi interdental dengan komposit dan wire 4.0, teknik single/double eyelet, dan essig wiring."],
+["Faktor predisposisi cedera dentoalveolar?","Oklusi abnormal, jarak gigit besar, inklinasi labial insisif, dan inkompetensi bibir atas yang pendek."],
+["Apa yang diperiksa ekstraoral sebelum fiksasi?","Inspeksi frontalis sampai fasialis (orbita, nasal, zygoma, aurikula, maksila, mandibula) — laserasi, <b>bloody otorrhea/rhinorrhea</b>, pergerakan bola mata, diplopia; palpasi bimanual mencari step off, deformitas, nyeri."],
+["Apa yang diperiksa intraoral sebelum fiksasi?","Bleeding aktif, <b>sublingual ekimosis</b>, floating maksila, false movement mandibula, krepitasi/gap antar gigi, open bite atau kontak prematur, avulsi atau mobilitas gigi."],
+["Berapa lama splinting fraktur dentoalveolar?","<b>4–6 minggu</b>, dengan tetap menjaga mobilitas fisiologis agar jaringan periodontal tidak rusak."],
+["Keuntungan dan kerugian eyelet (ivy loop)?","Keuntungan: bahan mudah didapat, sedikit merusak jaringan periodontal, rahang dapat dibuka hanya dengan mengangkat ikatan intermaksilaris. Kerugian: kawat mudah putus saat dipakai fiksasi intermaksiler."],
+["Ciri multiple loop wiring (stout)?","Formasi loop kecil mengelilingi arkus atas dan bawah, karet sebagai traksi."],
+["Keuntungan dan kerugian Erich arch bar?","Keuntungan: mudah didapat, murah, mudah adaptasi dan aplikasi. Kerugian: menimbulkan keradangan gingiva dan periodontal; tidak bisa pada edentulous luas."],
+["Indikasi Erich arch bar?","Gigi tidak cukup untuk cara lain · disertai patah tulang maksila · ada fragmen dentoalveolar yang perlu direduksi."],
+["Alat dental wiring?","Kaca mulut · pinset dental · sonde lurus dan lengkung · ekskavator · nald voeder/Mathieu · lutniaschek · wire cutter · wire <b>0,3–0,4 mm</b>."],
+["Panjang dan pembagian wire eyelet?","Wire 0,4 mm yang telah diregangkan dipotong sepanjang <b>3 m</b>, lalu dibagi menjadi segmen <b>15 cm</b>."],
+["Cara membuat eyelet?","Memilin bagian tengah kawat mengelilingi rod diameter <b>3 mm</b> — <b>dua setengah putaran</b> sudah cukup. Ujung dipotong oblik agar sama panjang dan tajam."],
+["Kehati-hatian saat memilin eyelet?","Hati-hati saat memutar di sisi lingual/palatal karena eyelet bisa bergeser."],
+["Bentuk tekukan kawat di sisi palatal/lingual?","Membentuk huruf <b>“W”</b>, tiap ujung dimasukkan ke mesial dan distal gigi yang berdekatan; ujung distal dilewatkan melalui eyelet lalu dipilin bersama ujung mesial."],
+["Berapa kawat eyelet dan apa itu cross-bracing?","Sekitar <b>5 kawat di RA dan 5 di RB</b>; posisi diatur agar tie wire membentuk efek <b>cross-bracing</b> — mencegah mobilitas mandibula bila eyelet atas dan bawah persis berhadapan."],
+["Kapan ekstraksi dilakukan pada prosedur wiring?","<b>Sebelum</b> tie wire dikencangkan; throat pack dilepas bila anestesi umum."],
+["Urutan pengencangan tie wire dan alasannya?","Dari <b>molar satu sisi → sisi lain → bertahap ke insisivus</b>. Mengencangkan satu sisi lebih dulu → crossbite; mengencangkan anterior lebih dulu → posterior crossbite."],
+["Kapan kawat dikencangkan penuh?","Ikat longgar dulu; kencangkan akhir hanya setelah oklusi tepat tercapai. Ujung tajam ditekuk dan diselipkan agar tidak mengulserasi jaringan lunak."],
+["Jalur kawat panjang pada teknik Essig (13–23)?","Mulai distal 13 sisi bukal → distal 23 → menembus interdental distal 23 ke lingual → ditarik sepanjang lingual kembali ke distal 13 → menembus interdental 13 ke bukal → bertemu ujung asal dan dieratkan di distobukal 13."],
+["Panjang wire Essig dan kawat pendeknya?","Wire <b>0,4 mm sepanjang 15 cm</b> untuk kawat panjang; kawat pendek <b>8 cm</b> untuk tiap interdental."],
+["Cara memasang kawat pendek Essig?","Dimasukkan dari labial ke lingual melewati interdental <b>tepat di atas</b> kawat panjang, dibelokkan ke bawah, kembali menembus interdental <b>tepat di bawah</b> kawat panjang, lalu dipelintir <b>searah jarum jam</b> sampai ketat dan dipotong."],
+["Bagaimana menyelesaikan ujung distal pada Essig?","Dipelintir searah jarum jam dengan needle holder, dipotong, dan sisa kawat ditekan ke arah insisal."],
+["Berapa poin checklist eyelet dan essig, dan apa yang dinilai?","Masing-masing <b>4 poin</b>; menekankan diameter loop yang tepat, wire tidak <i>kinking</i>, pilinan kencang, dan semua ujung diamankan ke interdental."]
+],
+"sl-splinting":[
+["Apa yang sebenarnya dilakukan splin?","Splin <b>tidak membuat gigi goyang kembali kencang</b> — ia hanya mengontrol mobilitas selama terpasang; bila dilepas gigi akan goyang lagi."],
+["Bagaimana mendapatkan reduksi mobilitas yang sesungguhnya?","Hanya dengan menghilangkan penyakitnya."],
+["Contoh kesalahan pemasangan splint yang diperingatkan buku?","Premolar pertama yang goyang di-splin ke premolar kedua yang stabil: beban berlebih jatuh pada premolar kedua sehingga <b>keduanya jadi goyang</b>."],
+["Kapan splinting dilakukan bila ada tekanan oklusal abnormal?","<b>Setelah</b> penyesuaian oklusi — kadang setelah penyesuaian saja kegoyangan berkurang dan splinting tidak lagi diperlukan."],
+["Dua faktor yang menentukan derajat kegoyangan?","Tinggi jaringan pendukung dan lebar ligamen periodontal."],
+["Sebelas alat dan bahan yang harus diverbalkan?","Diagnostik set · tang potong kawat · hemostat · light cure · handpiece · mata bur diamond & polish · kawat/wire · etsa · bonding · flowable komposit · pumice."],
+["Berapa panjang kerja wire yang diukur?","<b>2× panjang daerah kerja</b>."],
+["Ciri hasil pilinan (twist) wire yang benar?","Halus, rapi, dan ulirnya rapat."],
+["Di mana wire diaplikasikan?","Setinggi <b>titik kontak</b> — desainnya di bawah titik kontak dan di atas cingulum lingual."],
+["Di mana komposit diaplikasikan?","Di pertengahan mesio-distal gigi, tepat di tengah sisi lingual."],
+["Urutan tahapan splinting pada model?","Siapkan alat → ukur panjang kerja → potong dan pilin kawat → etsa & bonding (tidak dilakukan pada model) → aplikasi wire setinggi titik kontak → aplikasi komposit → light curing → cek oklusi → polishing."],
+["SOP pada pasien: waktu etsa dan bonding?","Etsa asam fosforik <b>30% selama 30 detik</b>, bilas, keringkan; bonding disinar <b>10 detik</b>."],
+["SOP pada pasien: waktu penyinaran akhir dan kontrol?","Flow composite di atas fiber disinar <b>20 detik tiap gigi</b>; pasien tidak makan/minum/meludah/berkumur <b>1 jam</b>; kontrol <b>1 minggu</b>."],
+["Berapa poin penilaian skills lab splinting?","<b>28 poin</b> (dikali 100 setelah dibagi), menilai 11 tahap dari persiapan operator sampai finishing–polishing."],
+["Batas waktu nilai penuh di skills lab splinting?","Nilai penuh bila dikerjakan mandiri tanpa koreksi dalam <b>< 8 menit</b>; aplikasi resin komposit nilai penuh bila tepat di tengah, rapi, dan selesai <b>1–9 menit</b>."]
+]
+};
+
 var KARTU=[];
 document.querySelectorAll('main > section.topic').forEach(function(sec){
   var judul=sec.querySelector('h2'); if(!judul) return;
+  var nama=judul.textContent.trim();
+  var vw=sec.id.indexOf('sl-')===0?'skills':'materi';
   sec.querySelectorAll('.kunci').forEach(function(k,i){
     var lbl=k.querySelector('.lbl');
     var isi=k.cloneNode(true); var l2=isi.querySelector('.lbl'); if(l2) l2.remove();
-    KARTU.push({topik:judul.textContent.trim(), id:sec.id,
-      view: sec.id.indexOf('sl-')===0?'skills':'materi',
+    KARTU.push({topik:nama, id:sec.id, view:vw,
       lbl:(lbl?lbl.textContent.trim():'Angka kunci'), isi:isi.innerHTML,
-      kunci: sec.id+'-'+i});
+      kunci: sec.id+'-k'+i});
+  });
+  (FCBANK[sec.id]||[]).forEach(function(qa,i){
+    KARTU.push({topik:nama, id:sec.id, view:vw,
+      tanya:qa[0], isi:'<p>'+qa[1]+'</p>', kunci: sec.id+'-q'+i});
   });
 });
-var fcUrut=[], fcIdx=0, fcBuka=false, fcHafal={};
+var fcUrut=[], fcIdx=0, fcBuka=false, fcHafal={}, fcTopik='semua', fcAcakOn=true;
 try{ fcHafal=JSON.parse(localStorage.getItem('hafal')||'{}'); }catch(e){}
+try{ fcTopik=localStorage.getItem('fcTopik')||'semua'; }catch(e){}
 function fcSimpan(){ try{ localStorage.setItem('hafal',JSON.stringify(fcHafal)); }catch(e){} }
+function fcSaring(){
+  return fcTopik==='semua'?KARTU.slice():KARTU.filter(function(x){return x.id===fcTopik;});
+}
 function fcAcak(){
-  fcUrut=KARTU.slice();
-  for(var i=fcUrut.length-1;i>0;i--){var k=Math.floor(Math.random()*(i+1));var t=fcUrut[i];fcUrut[i]=fcUrut[k];fcUrut[k]=t;}
+  fcUrut=fcSaring();
+  if(fcAcakOn) for(var i=fcUrut.length-1;i>0;i--){var k=Math.floor(Math.random()*(i+1));var t=fcUrut[i];fcUrut[i]=fcUrut[k];fcUrut[k]=t;}
   fcIdx=0; fcBuka=false;
+}
+function fcSetTopik(id){
+  fcTopik=id; try{ localStorage.setItem('fcTopik',id); }catch(e){}
+  fcAcak(); fcGambar(); window.scrollTo({top:0,behavior:'instant'});
+}
+function fcChips(){
+  var h='<div class="chips" id="fcChips">'
+    +'<button class="chip'+(fcTopik==='semua'?' on':'')+'" data-fc="semua">Semua <em>'+KARTU.length+'</em></button>';
+  PETA.forEach(function(g){
+    h+='<span class="chip-grup">'+g.grup+'</span>';
+    g.items.forEach(function(it){
+      var n=KARTU.filter(function(x){return x.id===it[0];}).length;
+      if(!n) return;
+      h+='<button class="chip'+(fcTopik===it[0]?' on':'')+'" data-fc="'+it[0]+'">'+it[1]+' <em>'+n+'</em></button>';
+    });
+  });
+  return h+'</div>';
 }
 function fcGambar(){
   var el=document.getElementById('angka'); if(!el) return;
   if(!fcUrut.length) fcAcak();
+  if(!fcUrut.length){ el.innerHTML='<h2 class="beranda-h" style="margin-top:0">Flashcard</h2><p class="lead">Belum ada kartu untuk topik ini.</p>'+fcChips(); }
+  else {
   var k=fcUrut[fcIdx];
-  var jumlahHafal=KARTU.filter(function(x){return fcHafal[x.kunci];}).length;
-  el.innerHTML='<h2 class="beranda-h" style="margin-top:0">Angka kunci</h2>'
-    +'<p class="lead">'+KARTU.length+' kartu yang ditarik dari kotak angka di tiap modul. Klik kartunya untuk membuka jawaban.</p>'
-    +'<div class="fc-top"><button class="chip" id="fcAcak">Acak ulang</button>'
+  var set=fcSaring();
+  var jumlahHafal=set.filter(function(x){return fcHafal[x.kunci];}).length;
+  el.innerHTML='<h2 class="beranda-h" style="margin-top:0">Flashcard</h2>'
+    +'<p class="lead">'+KARTU.length+' kartu tanya-jawab yang disusun per file PPT — definisi, angka, klasifikasi, sampai urutan langkah. Klik kartunya untuk membuka jawaban.</p>'
+    +fcChips()
+    +'<div class="fc-top"><button class="chip" id="fcAcak">'+(fcAcakOn?'Acak ulang':'Acak')+'</button>'
+    +'<button class="chip" id="fcUrut">'+(fcAcakOn?'Urutkan sesuai materi':'Sedang urut materi')+'</button>'
     +'<button class="chip" id="fcReset">Hapus tanda hafal</button>'
     +'<span class="sisa">Kartu '+(fcIdx+1)+' dari '+fcUrut.length+' · '+jumlahHafal+' ditandai hafal</span></div>'
+    +'<div class="prog"><div class="prog-bar"><span style="width:'+Math.round((fcIdx+1)/fcUrut.length*100)+'%"></span></div></div>'
     +'<div class="fc'+(fcHafal[k.kunci]?' hafal':'')+'" id="fcKartu">'
       +'<span class="fc-topik">'+k.topik+'</span>'
-      +'<span class="fc-lbl">'+k.lbl+'</span>'
+      +(k.tanya?'<p class="fc-tanya">'+k.tanya+'</p>':'<span class="fc-lbl">'+k.lbl+'</span>')
       +'<div class="fc-isi"'+(fcBuka?'':' hidden')+'>'+k.isi+'</div>'
-      +'<span class="fc-balik">'+(fcBuka?'':'Klik untuk membuka')+'</span></div>'
+      +'<span class="fc-balik">'+(fcBuka?'':'Klik untuk membuka jawaban')+'</span></div>'
     +'<div class="qbar"><button class="ghost" id="fcPrev">← Sebelumnya</button>'
       +'<button id="fcNext">Berikutnya →</button>'
       +'<button class="ghost" id="fcHafal">'+(fcHafal[k.kunci]?'Batal tandai hafal':'Tandai sudah hafal')+'</button>'
@@ -1784,8 +2422,13 @@ function fcGambar(){
   document.getElementById('fcPrev').addEventListener('click',function(){ fcIdx=(fcIdx-1+fcUrut.length)%fcUrut.length; fcBuka=false; fcGambar(); });
   document.getElementById('fcHafal').addEventListener('click',function(){
     fcHafal[k.kunci]=!fcHafal[k.kunci]; fcSimpan(); fcGambar(); });
-  document.getElementById('fcAcak').addEventListener('click',function(){ fcAcak(); fcGambar(); });
+  document.getElementById('fcAcak').addEventListener('click',function(){ fcAcakOn=true; fcAcak(); fcGambar(); });
+  document.getElementById('fcUrut').addEventListener('click',function(){ fcAcakOn=false; fcAcak(); fcGambar(); });
   document.getElementById('fcReset').addEventListener('click',function(){ fcHafal={}; fcSimpan(); fcGambar(); });
+  }
+  el.querySelectorAll('[data-fc]').forEach(function(b){
+    b.addEventListener('click',function(){ fcSetTopik(b.dataset.fc); });
+  });
 }
 
 /* ---------- OSCE gabungan: anestesi + ekstraksi + suturing ---------- */
@@ -2137,8 +2780,8 @@ function beranda(){
       <b>${g.items.length} topik</b>
       <span class="kartu-isi">${g.items.map(i=>i[1]).join(' · ')}</span></a>`).join('')}
     <a class="kartu" href="#/angka">
-      <span class="kartu-lbl">Angka kunci</span><b>${KARTU.length} kartu</b>
-      <span class="kartu-isi">Flashcard dosis, durasi, dan klasifikasi yang paling sering ditanya.</span></a>
+      <span class="kartu-lbl">Flashcard</span><b>${KARTU.length} kartu</b>
+      <span class="kartu-isi">Tanya-jawab tiap file PPT: definisi, angka, klasifikasi, dan langkah prosedur.</span></a>
     <a class="kartu" href="#/osce">
       <span class="kartu-lbl">OSCE besok</span><b>Latihan 10 menit</b>
       <span class="kartu-isi">Skenario gigi acak, naskah verbalisasi, dan timer bersegmen.</span></a>
@@ -2383,6 +3026,92 @@ function mulaiScene(){
   }
   draw(); if(!reduce) requestAnimationFrame(loop);
 }
+
+
+/* ---------- lightbox gambar ---------- */
+(function(){
+  var lb=document.getElementById('lb'), img=document.getElementById('lbImg'),
+      area=document.getElementById('lbArea'), cap=document.getElementById('lbCap'),
+      zoomLbl=document.getElementById('lbZoom');
+  if(!lb) return;
+  var daftar=[], pos=0, skala=1, alami=1;
+
+  function kumpulkan(el){
+    var sec=el.closest('section.topic, .figs, main, body');
+    var semua=sec?sec.querySelectorAll('figure img'):[el];
+    daftar=[].slice.call(semua); if(!daftar.length) daftar=[el];
+    pos=Math.max(0,daftar.indexOf(el));
+  }
+  function pas(){
+    var lebar=area.clientWidth-40, tinggi=area.clientHeight-40;
+    var w=img.naturalWidth||1, h=img.naturalHeight||1;
+    alami=Math.min(lebar/w, tinggi/h, 1);
+    if(!isFinite(alami)||alami<=0) alami=1;
+    skala=alami; terap();
+  }
+  function terap(){
+    img.style.width=(img.naturalWidth*skala)+'px';
+    img.style.height='auto';
+    zoomLbl.textContent=Math.round(skala*100)+'%';
+  }
+  function tampil(){
+    var el=daftar[pos];
+    img.src=el.currentSrc||el.src; img.alt=el.alt||'';
+    var fc=el.closest('figure'); var c=fc?fc.querySelector('figcaption'):null;
+    cap.textContent=c?c.textContent.trim():(el.alt||'');
+    if(img.complete&&img.naturalWidth) pas(); else img.onload=pas;
+    area.scrollTop=0; area.scrollLeft=0;
+  }
+  function buka(el){
+    kumpulkan(el); lb.hidden=false;
+    document.body.style.overflow='hidden';
+    tampil(); document.getElementById('lbTutup').focus();
+  }
+  function tutup(){ lb.hidden=true; document.body.style.overflow=''; img.src=''; }
+  function geser(n){ if(daftar.length<2) return; pos=(pos+n+daftar.length)%daftar.length; tampil(); }
+  function zoom(f){ skala=Math.min(8,Math.max(0.1,skala*f)); terap(); }
+
+  document.addEventListener('click',function(e){
+    var t=e.target;
+    if(t.tagName==='IMG'&&t.closest('figure')&&!t.closest('#lb')){ e.preventDefault(); buka(t); }
+  });
+  document.getElementById('lbTutup').addEventListener('click',tutup);
+  document.getElementById('lbBesar').addEventListener('click',function(){zoom(1.25);});
+  document.getElementById('lbKecil').addEventListener('click',function(){zoom(0.8);});
+  document.getElementById('lbPas').addEventListener('click',pas);
+  document.getElementById('lbAsli').addEventListener('click',function(){ skala=1; terap(); });
+  document.getElementById('lbPrev').addEventListener('click',function(){geser(-1);});
+  document.getElementById('lbNext').addEventListener('click',function(){geser(1);});
+  lb.addEventListener('click',function(e){ if(e.target===lb||e.target===area) tutup(); });
+  img.addEventListener('dblclick',function(){ if(skala>alami+0.01) pas(); else { skala=Math.max(1,alami*2); terap(); } });
+  area.addEventListener('wheel',function(e){
+    if(!e.ctrlKey&&!e.metaKey) return; e.preventDefault(); zoom(e.deltaY<0?1.12:0.89);
+  },{passive:false});
+  window.addEventListener('keydown',function(e){
+    if(lb.hidden) return;
+    if(e.key==='Escape') tutup();
+    else if(e.key==='ArrowRight') geser(1);
+    else if(e.key==='ArrowLeft') geser(-1);
+    else if(e.key==='+'||e.key==='=') zoom(1.25);
+    else if(e.key==='-') zoom(0.8);
+    else if(e.key==='0') pas();
+  });
+  window.addEventListener('resize',function(){ if(!lb.hidden&&Math.abs(skala-alami)<0.01) pas(); });
+
+  /* geser gambar dengan drag saat ter-zoom */
+  var seret=false,x0=0,y0=0,sl=0,st=0;
+  img.addEventListener('pointerdown',function(e){
+    seret=true; x0=e.clientX; y0=e.clientY; sl=area.scrollLeft; st=area.scrollTop;
+    img.classList.add('geser'); img.setPointerCapture(e.pointerId);
+  });
+  img.addEventListener('pointermove',function(e){
+    if(!seret) return;
+    area.scrollLeft=sl-(e.clientX-x0); area.scrollTop=st-(e.clientY-y0);
+  });
+  ['pointerup','pointercancel'].forEach(function(ev){
+    img.addEventListener(ev,function(){ seret=false; img.classList.remove('geser'); });
+  });
+})();
 
 </script>
 </body></html>
